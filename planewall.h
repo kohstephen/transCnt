@@ -1,12 +1,16 @@
 #ifndef PLANEWALL_H
 #define PLANEWALL_H
+#include "constant.h"
+#include "geometry.h"
+#include <string>
 
-class PlaneWall{
+class PlaneWall : public Geometry{
 	float _length;
+
 public:
-	PlaneWall(float length);
+	PlaneWall(float length, string mat, Temp t_init);
 	~PlaneWall();
-	float getLength();
+	float length();
 };
 
 #endif

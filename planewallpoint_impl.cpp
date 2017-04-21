@@ -1,17 +1,25 @@
 #include "planewallpoint_impl.h"
 
-PlaneWallPoint_impl::PlaneWallPoint_impl(Position rect_pos, duration secs){
-	_rect_pos = rect_pos;
-	\\ cast all durations to seconds
-	_secs = std::chrono::duration_cast<s>(secs);
+PlaneWallPoint_impl::PlaneWallPoint_impl(Loc rect_loc, Secs secs){
+	_rect_loc = rect_loc;
+	_secs = secs;
+	_temp = 0.0f;
 }
 
 PlaneWallPoint_impl::~PlaneWallPoint_impl(){}
 
-Position PlaneWallPoint_impl::get_rect_pos(){
-	return _rect_pos;
+Loc PlaneWallPoint_impl::rect_loc(){
+	return _rect_loc;
 }
 
-duration PlaneWallPoint_impl::get_time() {
+void PlaneWallPoint_impl::temp(Temp temp) {
+	_temp = temp;
+}
+
+Temp PlaneWallPoint_impl::temp() {
+	return _temp;
+}
+
+Secs PlaneWallPoint_impl::time() {
 	return _secs;
 }

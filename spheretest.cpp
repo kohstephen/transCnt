@@ -1,19 +1,15 @@
 #include <math.h>
 #include <iostream>
 #include "calculation.h"
+#include <chrono>
 
 int main(){
-    float radius;
     string mat = "st";
     string envmat = "water";
-    float r = 0.0125;
-    float time = 30;
-    float t_init = 500;
-    float t_inf = 300;
+    Temp t_init = 500;
+    Temp t_inf = 300;
     
-    float result = 397.3;
-     
-    float output;
+
     //(zeta = 1.142)
     
     // Sphere s = Sphere(0.025);
@@ -34,22 +30,25 @@ int main(){
     // output = temp_at_time_at_point(s4, mat, envmat, 0.05, 100, t_init, t_inf);
     // cout << output << endl;
 
-    InfiniteCylinder ic1 = InfiniteCylinder(0.001);
-    output = temp_at_time_at_point(ic1, mat, envmat, 0.0005, 10, t_init, t_inf);
-    cout << output << endl;
-
-    InfiniteCylinder ic2 = InfiniteCylinder(0.01);
-    output = temp_at_time_at_point(ic2, mat, envmat, 0.005, 10, t_init, t_inf);
-    cout << output << endl;
-
-    InfiniteCylinder ic3 = InfiniteCylinder(0.1);
-    output = temp_at_time_at_point(ic3, mat, envmat, 0.05, 100, t_init, t_inf);
-    cout << output << endl;
-
-
-    // PlaneWall pl = PlaneWall(0.001);
-    // output = temp_at_time_at_point(pl, mat, envmat, 0.0005, 10, t_init, t_inf);
+    // InfiniteCylinder ic1 = InfiniteCylinder(0.001);
+    // output = temp_at_time_at_point(ic1, mat, envmat, 0.0005, 10, t_init, t_inf);
     // cout << output << endl;
+
+    // InfiniteCylinder ic2 = InfiniteCylinder(0.01);
+    // output = temp_at_time_at_point(ic2, mat, envmat, 0.005, 10, t_init, t_inf);
+    // cout << output << endl;
+
+    // InfiniteCylinder ic3 = InfiniteCylinder(0.1);
+    // output = temp_at_time_at_point(ic3, mat, envmat, 0.05, 100, t_init, t_inf);
+    // cout << output << endl;
+
+
+    PlaneWall w = PlaneWall(0.001, mat, t_init);
+    PlaneWallPoint_impl p = PlaneWallPoint_impl(0.0005f, 10.0f);
+    temp_at_point(w, p, envmat, t_inf);
+    cout << p.temp() << endl;
+    //cout << p._temp << endl;
+
 
     // PlaneWall pl2 = PlaneWall(0.01);
     // output = temp_at_time_at_point(pl2, mat, envmat, 0.005, 10, t_init, t_inf);
