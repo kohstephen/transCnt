@@ -1,7 +1,7 @@
 #include <math.h>
 #include <tr1/cmath>
-#include "calculation.h"
 #include <iostream>
+#include "calculation.h"
 
 extern const float PI = 3.14159265;
 float RATIO = 0.003;
@@ -74,8 +74,7 @@ float sphere_solve_for_zeta(float biot, int n){
     return -1;
 }
 
-float infinitecylinder_lumped_cap_at_time(InfiniteCylinder cylinder, float density, float h, 
-    float c, float time, float t_init, float t_inf){
+float infinitecylinder_lumped_cap_at_time(InfCylinder cylinder, float density, float h, float c, float time, float t_init, float t_inf){
     float theta = exp(-h*2*time/(density*cylinder.getRadius()*c));
     return theta*(t_init-t_inf)+t_inf;
 }
@@ -346,10 +345,13 @@ void temp_at_point(PlaneWall &w, PlaneWallPoint &p, string envmat, Temp t_inf){
 }
 
 
-float temp_at_time_at_point(InfiniteCylinder cylinder, string mat, string envmat, 
-    float r, float time, float t_init, float t_inf){
+void temp_at_point(InfCylinder &icyl, InfCylinderPoint &p, string envmat, Temp t_inf){
 
-    float r0 = cylinder.getRadius();
+    float r0 = icyl.getRadius();
+    string mat = icyl.mat();
+    Temp t_init = icyl.t_init();
+    Loc r = p.cyl_loc();
+    Secs time = p.time();
 
     //heat transfer coefficient (units: W/m^2K)
     float h = get_h(envmat);
@@ -360,7 +362,8 @@ float temp_at_time_at_point(InfiniteCylinder cylinder, string mat, string envmat
     float density = get_density(mat);
     float c = get_c(mat, t_init);
     if(bi<0.1){
-        return infinitecylinder_lumped_cap_at_time(cylinder, density, h, c, time, t_init, t_inf);
+        p.temp(infinitecylinder_lumped_cap_at_time(icyl, density, h, c, time, t_init, t_inf));
+        return;
     }
 
     //thermal diffusivity (units: m^2/s)
@@ -368,56 +371,91 @@ float temp_at_time_at_point(InfiniteCylinder cylinder, string mat, string envmat
     float fo = fourier(alpha, time, r0);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
-        return infinitecylinder_one_term_at_time_at_point(fo, bi, r, r0, t_init, t_inf);
+        p.temp(infinitecylinder_one_term_at_time_at_point(fo, bi, r, r0, t_init, t_inf));
+        return;
     }
     
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        return infinitecylinder_multiple_term_at_time_at_point(fo, bi, r, r0, t_init, t_inf);
+        p.temp(infinitecylinder_multiple_term_at_time_at_point(fo, bi, r, r0, t_init, t_inf));
+        return;
     }
     
     //semi-infinite approximation
     
-    return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k, t_init, t_inf); 
+    p.temp(semi_infinite_at_time_at_point(r0-r, alpha, time, h, k, t_init, t_inf)); 
 }
 
-/*
 
-float temp_at_time_at_point(RectangularParallelepiped rp, string mat, string envmat, 
-    float x1, float x2, float x3, float time, float t_init, float t_inf){
-    PlaneWall pl1 = PlaneWall(rp.getL1());
-    PlaneWall pl2 = PlaneWall(rp.getL2());
-    PlaneWall pl3 = PlaneWall(rp.getL3());
-    float t1 = temp_at_time_at_point(pl1, mat, envmat, x1, time, t_init, t_inf);
-    float t2 = temp_at_time_at_point(pl2, mat, envmat, x2, time, t_init, t_inf);
-    float t3 = temp_at_time_at_point(pl3, mat, envmat, x3, time, t_init, t_inf);
+void temp_at_point(RectBar &rb, RectBarPoint &p, string envmat, Temp t_inf){
+    string mat = rb.mat();
+    Temp t_init = rb.t_init();
+    Secs time = p.time();
+    
+    PlaneWall pl1 = PlaneWall(rb.getL1(), mat, t_init);
+    PlaneWall pl2 = PlaneWall(rb.getL2(), mat, t_init);
+    PlaneWall pl3 = PlaneWall(rb.getL3(), mat, t_init);
+    PlaneWallPoint p1 = PlaneWallPoint(p.rect_loc1(),time);
+    PlaneWallPoint p2 = PlaneWallPoint(p.rect_loc2(),time);
+    PlaneWallPoint p3 = PlaneWallPoint(p.rect_loc3(),time);
+
+    temp_at_point(pl1, p1, envmat, t_inf);
+    temp_at_point(pl2, p2, envmat, t_inf);
+    temp_at_point(pl3, p3, envmat, t_inf);
+    
+    float t1 = p1.temp();
+    float t2 = p2.temp();
+    float t3 = p3.temp();
+    
     float theta1 = (t1-t_inf)/(t_init-t_inf);
     float theta2 = (t2-t_inf)/(t_init-t_inf);
     float theta3 = (t3-t_inf)/(t_init-t_inf);
-    return theta1*theta2*theta3*(t_init-t_inf)+t_inf;
+    
+    p.temp(theta1*theta2*theta3*(t_init-t_inf)+t_inf);
 }
 
-float temp_at_time_at_point(Cylinder cylinder, string mat, string envmat, 
-    float r, float x, float time, float t_init, float t_inf){
-    InfiniteCylinder ic = InfiniteCylinder(cylinder.getRadius());
-    PlaneWall pl = PlaneWall(cylinder.getL());
-    float t1 = temp_at_time_at_point(ic, mat, envmat, r, time, t_init, t_inf);
-    float t2 = temp_at_time_at_point(pl, mat, envmat, x, time, t_init, t_inf);
+
+void temp_at_point(Cylinder &cyl, CylinderPoint &p, string envmat, Temp t_inf){
+    string mat = cyl.mat();
+    Temp t_init = cyl.t_init();
+    Secs time = p.time();
+    
+    InfCylinder icyl = InfCylinder(cyl.getRadius(),mat,t_init);
+    PlaneWall w = PlaneWall(cyl.getL(),mat,t_init);
+    
+    InfCylinderPoint cylp = InfCylinderPoint(p.cyl_loc(),time);
+    PlaneWallPoint wp = PlaneWallPoint(p.rect_loc(), time);
+    
+    temp_at_point(icyl, cylp, envmat, t_inf);
+    temp_at_point(w, wp, envmat, t_inf);
+    
+    float t1 = cylp.temp();
+    float t2 = wp.temp();
+    
     float theta1 = (t1-t_inf)/(t_init-t_inf);
     float theta2 = (t2-t_inf)/(t_init-t_inf);
-    return theta1*theta2*(t_init-t_inf)+t_inf;
+    
+    p.temp(theta1*theta2*(t_init-t_inf)+t_inf);
 }
 
-float temp_at_time_at_point(InfiniteRectangularBar irb, string mat, string envmat, 
-    float x1, float x2, float time, float t_init, float t_inf){
-    PlaneWall pl1 = PlaneWall(irb.getL1());
-    PlaneWall pl2 = PlaneWall(irb.getL2());
-    float t1 = temp_at_time_at_point(pl1, mat, envmat, x1, time, t_init, t_inf);
-    float t2 = temp_at_time_at_point(pl2, mat, envmat, x2, time, t_init, t_inf);
+void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, string envmat, Temp t_inf){
+    string mat = irb.mat();
+    Temp t_init = irb.t_init();
+    Secs time = p.time();
+    
+    PlaneWall pl1 = PlaneWall(irb.getL1(), mat, t_init);
+    PlaneWall pl2 = PlaneWall(irb.getL2(), mat, t_init);
+    PlaneWallPoint p1 = PlaneWallPoint(p.rect_loc1(),time);
+    PlaneWallPoint p2 = PlaneWallPoint(p.rect_loc2(),time);
+    
+    temp_at_point(pl1, p1, envmat, t_inf);
+    temp_at_point(pl2, p2, envmat, t_inf);
+    
+    float t1 = p1.temp();
+    float t2 = p2.temp();
+    
     float theta1 = (t1-t_inf)/(t_init-t_inf);
     float theta2 = (t2-t_inf)/(t_init-t_inf);
-    return theta1*theta2*(t_init-t_inf)+t_inf;
+    
+    p.temp(theta1*theta2*(t_init-t_inf)+t_inf);
 }
-
-
-*/

@@ -1,4 +1,4 @@
-#include "rectangularparallelepiped.h"
+#include "rectbar.h"
 
 RectBar::RectBar(float L_1, float L_2, float L_3, string mat, Temp t_init):Geometry(mat,t_init){
 	_L_1 = L_1;

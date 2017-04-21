@@ -39,9 +39,10 @@ int main(){
     // output = temp_at_time_at_point(ic2, mat, envmat, 0.005, 10, t_init, t_inf);
     // cout << output << endl;
 
-    // InfiniteCylinder ic3 = InfiniteCylinder(0.1);
-    // output = temp_at_time_at_point(ic3, mat, envmat, 0.05, 100, t_init, t_inf);
-    // cout << output << endl;
+    InfCylinder ic3 = InfCylinder(0.1,mat,t_init);
+    InfCylinderPoint icp3 = InfCylinderPoint(0.05,100);
+    temp_at_point(ic3, icp3, envmat, t_inf);
+    cout << icp3.temp() << endl;
 
 
     PlaneWall w = PlaneWall(0.001, mat, t_init);
