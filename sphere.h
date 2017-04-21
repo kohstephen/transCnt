@@ -8,7 +8,7 @@ class Sphere : public Geometry{
 public:
 	Sphere(float radius, string mat, Temp t_init);
 	~Sphere();
-	float getRadius();
+	float radius();
 };
 
 #endif

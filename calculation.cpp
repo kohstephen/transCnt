@@ -86,7 +86,7 @@ float planewall_lumped_cap_at_time(PlaneWall w, float density, float h, float c,
 }
 
 float sphere_lumped_cap_at_time(Sphere s, float density, float h, float c, float time, float t_init, float t_inf){
-	float theta = exp(-h*3*time/(density*s.getRadius()*c));
+	float theta = exp(-h*3*time/(density*s.radius()*c));
 	return theta*(t_init-t_inf)+t_inf;
 }
 
@@ -262,11 +262,14 @@ void temp_at_time(vector<float>* ret, Sphere s, string mat, string envmat, vecto
 }
 **/
 
-float temp_at_time_at_point(Sphere s, string mat, string envmat, 
-    float r, float time, float t_init, float t_inf){
+void temp_at_point(Sphere &s, SpherePoint &p, string envmat, float t_inf){
 
-	float r0 = s.getRadius();
-
+    float r0 = s.radius();
+    string mat = s.mat();
+    Temp t_init = s.t_init();
+    Loc r = p.sphere_loc();
+    Secs time = p.time();
+    
 	//heat transfer coefficient (units: W/m^2K)
     float h = get_h(envmat);
     //conduction coefficient (units: W/mK)
@@ -276,7 +279,8 @@ float temp_at_time_at_point(Sphere s, string mat, string envmat,
     float density = get_density(mat);
     float c = get_c(mat, t_init);
     if(bi<0.1){
-		return sphere_lumped_cap_at_time(s, density, h, c, time, t_init, t_inf);
+		p.temp( sphere_lumped_cap_at_time(s, density, h, c, time, t_init, t_inf));
+		return;
 	}
 
 	//thermal diffusivity (units: m^2/s)
@@ -284,17 +288,19 @@ float temp_at_time_at_point(Sphere s, string mat, string envmat,
 	float fo = fourier(alpha, time, r0);
 	//One-Term Approximation. Use this when Fo > 0.2
 	if(fo > 0.2){
-        return sphere_one_term_at_time_at_point(fo, bi, r, r0, t_init, t_inf);
+        p.temp( sphere_one_term_at_time_at_point(fo, bi, r, r0, t_init, t_inf));
+        return;
 	}
     
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        return sphere_multiple_term_at_time_at_point(fo, bi, r, r0, t_init, t_inf);
+        p.temp(sphere_multiple_term_at_time_at_point(fo, bi, r, r0, t_init, t_inf));
+        return;
     }
     
     //semi-infinite approximation
     
-    return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k, t_init, t_inf); 
+    p.temp(semi_infinite_at_time_at_point(r0-r, alpha, time, h, k, t_init, t_inf)); 
 }
 
 

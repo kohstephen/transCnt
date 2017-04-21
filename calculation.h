@@ -11,6 +11,7 @@
 #include "sphere.h"
 #include "constant.h"
 #include "planewallpoint_impl.h"
+#include "spherepoint.h"
 
 using namespace std;
 
@@ -22,7 +23,7 @@ void temp_at_time(vector<float>* ret, Sphere s, string mat, string envmat,
 **/
 void temp_at_point(PlaneWall &w, PlaneWallPoint_impl &p, string envmat, Temp t_inf);
 
-//void temp_at_time(Sphere &s, SpherePoint &p, string envmat, float t_inf);
+void temp_at_point(Sphere &s, SpherePoint &p, string envmat, float t_inf);
 
 /*
 float temp_at_time_at_point(Sphere s, string mat, string envmat, 

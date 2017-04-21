@@ -18,9 +18,10 @@ int main(){
     // cout << output << endl;
     // //assert( abs(output-result) < 0.01 );
 
-    // Sphere s2 = Sphere(0.001);
-    // output = temp_at_time_at_point(s2, mat, envmat, 0.0005, 5, t_init, t_inf);
-    // cout << output << endl;
+    Sphere s2 = Sphere(0.001, mat, t_init);
+    SpherePoint sp2 = SpherePoint(0.0005,5);
+    temp_at_point(s2, sp2, envmat, t_inf);
+    cout << sp2.temp() << endl;
 
     // Sphere s3 = Sphere(0.01);
     // output = temp_at_time_at_point(s3, mat, envmat, 0.005, 10, t_init, t_inf);
@@ -44,9 +45,9 @@ int main(){
 
 
     PlaneWall w = PlaneWall(0.001, mat, t_init);
-    PlaneWallPoint_impl p = PlaneWallPoint_impl(0.0005f, 10.0f);
-    temp_at_point(w, p, envmat, t_inf);
-    cout << p.temp() << endl;
+    PlaneWallPoint_impl wp = PlaneWallPoint_impl(0.0005f, 10.0f);
+    temp_at_point(w, wp, envmat, t_inf);
+    cout << wp.temp() << endl;
     //cout << p._temp << endl;
 
 

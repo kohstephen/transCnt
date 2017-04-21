@@ -6,6 +6,6 @@ Sphere::Sphere(float radius, string mat, Temp t_init) : Geometry(mat,t_init){
 
 Sphere::~Sphere(){}
 
-float Sphere::getRadius(){
+float Sphere::radius(){
 	return _radius;
 }
