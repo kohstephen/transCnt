@@ -25,11 +25,7 @@ void temp_at_point(PlaneWall &w, PlaneWallPoint &p, string envmat, Temp t_inf);
 void temp_at_point(Sphere &s, SpherePoint &p, string envmat, Temp t_inf);
 
 /*
-float temp_at_time_at_point(Sphere s, string mat, string envmat, 
-    float r, float time, float t_init, float t_inf);
 
-// float temp_at_time_at_point(PlaneWall w, string mat, string envmat, 
-//     float x, float time, float t_init, float t_inf);
 
 float temp_at_time_at_point(InfiniteCylinder cylinder, string mat, string envmat, 
     float x, float time, float t_init, float t_inf);
