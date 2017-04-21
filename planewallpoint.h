@@ -2,14 +2,13 @@
 #define PLANEWALLPOINT_IMPL_H
 #include "constant.h"
 
-class PlaneWallPoint_impl{
-private:
+class PlaneWallPoint{
 	Loc _rect_loc;
-	Secs _secs;
 	Temp _temp;
+	Secs _secs;
 public:
-	PlaneWallPoint_impl(Loc rect_loc, Secs secs);
-	~PlaneWallPoint_impl();
+	PlaneWallPoint(Loc rect_loc, Secs secs);
+	~PlaneWallPoint();
 	Loc rect_loc();
 	Temp temp();
 	void temp(Temp temp);

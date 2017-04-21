@@ -45,7 +45,7 @@ int main(){
 
 
     PlaneWall w = PlaneWall(0.001, mat, t_init);
-    PlaneWallPoint_impl wp = PlaneWallPoint_impl(0.0005f, 10.0f);
+    PlaneWallPoint wp = PlaneWallPoint(0.0005f, 10.0f);
     temp_at_point(w, wp, envmat, t_inf);
     cout << wp.temp() << endl;
     //cout << p._temp << endl;

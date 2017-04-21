@@ -7,10 +7,9 @@
 #include "rectangularparallelepiped.h"
 #include "cylinder.h"
 #include "infiniterectangularbar.h"
-#include "semiinfiniteplate.h"
 #include "sphere.h"
 #include "constant.h"
-#include "planewallpoint_impl.h"
+#include "planewallpoint.h"
 #include "spherepoint.h"
 
 using namespace std;
@@ -21,9 +20,9 @@ extern const float PI;
 void temp_at_time(vector<float>* ret, Sphere s, string mat, string envmat, 
     vector<float>& points, float time, float t_init, float t_inf);
 **/
-void temp_at_point(PlaneWall &w, PlaneWallPoint_impl &p, string envmat, Temp t_inf);
+void temp_at_point(PlaneWall &w, PlaneWallPoint &p, string envmat, Temp t_inf);
 
-void temp_at_point(Sphere &s, SpherePoint &p, string envmat, float t_inf);
+void temp_at_point(Sphere &s, SpherePoint &p, string envmat, Temp t_inf);
 
 /*
 float temp_at_time_at_point(Sphere s, string mat, string envmat, 
@@ -44,8 +43,6 @@ float temp_at_time_at_point(Cylinder cylinder, string mat, string envmat,
 float temp_at_time_at_point(InfiniteRectangularBar irb, string mat, string envmat, 
     float x1, float x2, float time, float t_init, float t_inf);
 
-float temp_at_time_at_point(SemiInfinitePlate sip, string mat, string envmat, 
-    float x1, float x2, float time, float t_init, float t_inf);
     
     */
     
