@@ -20,7 +20,6 @@ extern const float PI;
 void temp_at_time(vector<float>* ret, Sphere s, string mat, string envmat, 
     vector<float>& points, float time, float t_init, float t_inf);
 **/
-
 void temp_at_point(PlaneWall &w, PlaneWallPoint_impl &p, string envmat, Temp t_inf);
 
 //void temp_at_time(Sphere &s, SpherePoint &p, string envmat, float t_inf);
