@@ -3,15 +3,15 @@
 #include "geometry.h"
 
 class RectBar : public Geometry{
-	float _L_1;
-	float _L_2;
-	float _L_3;
+	Dim _L_1;
+	Dim _L_2;
+	Dim _L_3;
 public:
-	RectBar(float L_1, float L_2, float L_3, string mat, Temp t_init);
+	RectBar(Dim L_1, Dim L_2, Dim L_3, string mat, Temp t_init);
 	~RectBar();
-	float getL1();
-	float getL2();
-	float getL3();
+	Dim l1();
+	Dim l2();
+	Dim l3();
 };
 
 #endif

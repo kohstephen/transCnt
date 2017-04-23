@@ -16,8 +16,9 @@ float fourier(float alpha, float time, float x){
 	return alpha*time/(x*x);
 }
 
-float calculate_alpha(float k, float density, float c){
-    return k/(density*c);
+
+float theta_to_temp(float theta, float t_init, float t_inf){
+    return theta*(t_init-t_inf)+t_inf;
 }
 
 // only support n <= 6
@@ -74,46 +75,46 @@ float sphere_solve_for_zeta(float biot, int n){
     return -1;
 }
 
-float infinitecylinder_lumped_cap_at_time(InfCylinder cylinder, float density, float h, float c, float time, float t_init, float t_inf){
-    float theta = exp(-h*2*time/(density*cylinder.getRadius()*c));
-    return theta*(t_init-t_inf)+t_inf;
+float infinitecylinder_lumped_cap_at_time(InfCylinder &cylinder, float density, float h, float c, float time){
+    float theta = exp(-h*2*time/(density*cylinder.radius()*c));
+    return theta;
 }
 
-float planewall_lumped_cap_at_time(PlaneWall w, float density, float h, float c, float time, float t_init, float t_inf){
+float planewall_lumped_cap_at_time(PlaneWall &w, float density, float h, float c, float time){
     float theta = exp(-h*time/(density*w.length()*c));
-    return theta*(t_init-t_inf)+t_inf;
+    return theta;
 }
 
-float sphere_lumped_cap_at_time(Sphere s, float density, float h, float c, float time, float t_init, float t_inf){
+float sphere_lumped_cap_at_time(Sphere &s, float density, float h, float c, float time){
 	float theta = exp(-h*3*time/(density*s.radius()*c));
-	return theta*(t_init-t_inf)+t_inf;
+	return theta;
 }
 
-float infinitecylinder_one_term_at_time_at_point(float fourier, float biot, float r, float r0, float t_init, float t_inf){
+float infinitecylinder_one_term_at_time_at_point(float fourier, float biot, float r, float r0){
     float zeta = cylinder_solve_for_zeta(biot,1);
     float j0 = std::tr1::cyl_bessel_j(0,zeta);
     float j1 = std::tr1::cyl_bessel_j(1,zeta);
     float c1 = 2*j1/(zeta*(j0*j0+j1*j1));
     float theta = c1*exp(-zeta*zeta*fourier)*std::tr1::cyl_bessel_j(0,zeta*r/r0);
-    return theta*(t_init-t_inf)+t_inf;
+    return theta;
 }
 
-float planewall_one_term_at_time_at_point(float fourier, float biot, float x, float L, float t_init, float t_inf){
+float planewall_one_term_at_time_at_point(float fourier, float biot, float x, float L){
     float zeta = planewall_solve_for_zeta(biot,1);
     float c1 = 4.0f*sin(zeta)/(2.0f*zeta+sin(2.0f*zeta));
     float theta = c1*exp(-zeta*zeta*fourier)*cos(zeta*x/L);
-    return theta*(t_init-t_inf)+t_inf;
+    return theta;
 }
 
-float sphere_one_term_at_time_at_point(float fourier, float biot, float r, float r0, float t_init, float t_inf){
+float sphere_one_term_at_time_at_point(float fourier, float biot, float r, float r0){
     float zeta = sphere_solve_for_zeta(biot,1); //can we solve this directly? (biot number)
     float c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
     float temp = zeta*r/r0;
     float theta = c1*exp(-zeta*zeta*fourier)*(1/temp)*sin(temp);
-    return theta*(t_init-t_inf)+t_inf;
+    return theta;
 }
 
-float infinitecylinder_multiple_term_at_time_at_point(float fourier, float biot, float r, float r0, float t_init, float t_inf){
+float infinitecylinder_multiple_term_at_time_at_point(float fourier, float biot, float r, float r0){
     float theta = 0;
     int n = 1;
     float zeta_n, zeta_n_1, j0, j1, c_n, c_n_1;
@@ -133,10 +134,10 @@ float infinitecylinder_multiple_term_at_time_at_point(float fourier, float biot,
         theta += c_n*exp(-zeta_n*zeta_n*fourier)*std::tr1::cyl_bessel_j(0, zeta_n*r/r0);
         n += 1;
     }
-    return theta*(t_init-t_inf)+t_inf;
+    return theta;
 }
 
-float planewall_multiple_term_at_time_at_point(float fourier, float biot, float x, float L, float t_init, float t_inf){
+float planewall_multiple_term_at_time_at_point(float fourier, float biot, float x, float L){
     float theta = 0;
     int n = 1;
     float zeta_n, zeta_n_1, c_n, c_n_1;
@@ -154,10 +155,10 @@ float planewall_multiple_term_at_time_at_point(float fourier, float biot, float 
         theta += c_n*exp(-zeta_n*zeta_n*fourier)*cos(zeta_n*x/L);
         n += 1;
     }
-    return theta*(t_init-t_inf)+t_inf;
+    return theta;
 }
 
-float sphere_multiple_term_at_time_at_point(float fourier, float biot, float r, float r0, float t_init, float t_inf){
+float sphere_multiple_term_at_time_at_point(float fourier, float biot, float r, float r0){
     // std::cout << biot << std::endl;
     float theta = 0;
     int n = 1;
@@ -179,7 +180,7 @@ float sphere_multiple_term_at_time_at_point(float fourier, float biot, float r, 
         theta += c_n*exp(-zeta_n*zeta_n*fourier)*(1/temp)*sin(temp);
         n += 1;
     }
-    return theta*(t_init-t_inf)+t_inf;
+    return theta;
 }
 
 /**
@@ -198,11 +199,11 @@ void sphere_one_term_at_time(vector<float>* ret, float fourier, float biot, vect
 }
 **/
 
-float semi_infinite_at_time_at_point(float x, float alpha, float time, float h, float k, float t_init, float t_inf){
+float semi_infinite_at_time_at_point(float x, float alpha, float time, float h, float k){
     float y = sqrt(alpha*time);
     float z = x/(2*y);
     float theta = erfc(z) - exp(h*x/k + h*h*alpha*time/(k*k))*erfc(z+h*y/k);
-    return theta*(t_init-t_inf)+t_inf;
+    return theta;
 }
 
 /**
@@ -261,201 +262,167 @@ void temp_at_time(vector<float>* ret, Sphere s, string mat, string envmat, vecto
 }
 **/
 
-void temp_at_point(Sphere &s, SpherePoint &p, string envmat, Temp t_inf){
-
+float theta_at_point(Sphere &s, SpherePoint &p, float h){
     float r0 = s.radius();
-    string mat = s.mat();
-    Temp t_init = s.t_init();
     Loc r = p.sphere_loc();
     Secs time = p.time();
-    
-	//heat transfer coefficient (units: W/m^2K)
-    float h = get_h(envmat);
-    //conduction coefficient (units: W/mK)
-    float k = get_k(mat, t_init);
+    float k = s.k(); //conduction coefficient (units: W/mK)
     float bi = biot(h, k, r0);
+	float density = s.p();
+    float c = s.c();
+    
 	//Lumped Capacitance. Use this when Bi < 0.1
-    float density = get_density(mat);
-    float c = get_c(mat, t_init);
     if(bi<0.1){
-		p.temp( sphere_lumped_cap_at_time(s, density, h, c, time, t_init, t_inf));
-		return;
+		return sphere_lumped_cap_at_time(s, density, h, c, time);
 	}
 
 	//thermal diffusivity (units: m^2/s)
-	float alpha = calculate_alpha(k, density, c);
+	float alpha = s.a();
 	float fo = fourier(alpha, time, r0);
 	//One-Term Approximation. Use this when Fo > 0.2
 	if(fo > 0.2){
-        p.temp( sphere_one_term_at_time_at_point(fo, bi, r, r0, t_init, t_inf));
-        return;
+        return sphere_one_term_at_time_at_point(fo, bi, r, r0);
 	}
     
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        p.temp(sphere_multiple_term_at_time_at_point(fo, bi, r, r0, t_init, t_inf));
-        return;
+        return sphere_multiple_term_at_time_at_point(fo, bi, r, r0);
     }
     
     //semi-infinite approximation
     
-    p.temp(semi_infinite_at_time_at_point(r0-r, alpha, time, h, k, t_init, t_inf)); 
+    return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k); 
 }
 
-
-void temp_at_point(PlaneWall &w, PlaneWallPoint &p, string envmat, Temp t_inf){
-
+float theta_at_point(PlaneWall &w, PlaneWallPoint &p, float h){
     float L = w.length();
-    string mat = w.mat();
-    Temp t_init = w.t_init();
     Loc x = p.rect_loc();
     Secs time = p.time();
-    
-    //heat transfer coefficient (units: W/m^2K)
-    float h = get_h(envmat);
-    //conduction coefficient (units: W/mK)
-    float k = get_k(mat, t_init);
+    float k = w.k();
     float bi = biot(h, k, L);
-    //Lumped Capacitance. Use this when Bi < 0.1
-    float density = get_density(mat);
-    float c = get_c(mat, t_init);
+    float density = w.p();
+    float c = w.c();
+    
     if(bi<0.1){
-        p.temp( planewall_lumped_cap_at_time(w, density, h, c, time, t_init, t_inf) );
-        return;
+        return planewall_lumped_cap_at_time(w, density, h, c, time);
     }
 
-    //thermal diffusivity (units: m^2/s)
-    float alpha = calculate_alpha(k, density, c);
+    float alpha = w.a();
     float fo = fourier(alpha, time, L);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
-        p.temp( planewall_one_term_at_time_at_point(fo, bi, x, L, t_init, t_inf));
-        return;
+        return planewall_one_term_at_time_at_point(fo, bi, x, L);
     }
     
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        p.temp (planewall_multiple_term_at_time_at_point(fo, bi, x, L, t_init, t_inf));
-        return;
+        return planewall_multiple_term_at_time_at_point(fo, bi, x, L);
     }
     
     //semi-infinite approximation
-    
-    p.temp( semi_infinite_at_time_at_point(L-x, alpha, time, h, k, t_init, t_inf) );
+    return semi_infinite_at_time_at_point(L-x, alpha, time, h, k);
 }
 
-
-void temp_at_point(InfCylinder &icyl, InfCylinderPoint &p, string envmat, Temp t_inf){
-
-    float r0 = icyl.getRadius();
-    string mat = icyl.mat();
-    Temp t_init = icyl.t_init();
+float theta_at_point(InfCylinder &icyl, InfCylinderPoint &p, float h){
+    float r0 = icyl.radius();
     Loc r = p.cyl_loc();
     Secs time = p.time();
-
-    //heat transfer coefficient (units: W/m^2K)
-    float h = get_h(envmat);
-    //conduction coefficient (units: W/mK)
-    float k = get_k(mat, t_init);
+    float k = icyl.k();
     float bi = biot(h, k, r0);
-    //Lumped Capacitance. Use this when Bi < 0.1
-    float density = get_density(mat);
-    float c = get_c(mat, t_init);
+    float density = icyl.p();
+    float c = icyl.c();
     if(bi<0.1){
-        p.temp(infinitecylinder_lumped_cap_at_time(icyl, density, h, c, time, t_init, t_inf));
-        return;
+        return infinitecylinder_lumped_cap_at_time(icyl, density, h, c, time);
     }
 
     //thermal diffusivity (units: m^2/s)
-    float alpha = calculate_alpha(k, density, c);
+    float alpha = icyl.a();
     float fo = fourier(alpha, time, r0);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
-        p.temp(infinitecylinder_one_term_at_time_at_point(fo, bi, r, r0, t_init, t_inf));
-        return;
+        return infinitecylinder_one_term_at_time_at_point(fo, bi, r, r0);
     }
     
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        p.temp(infinitecylinder_multiple_term_at_time_at_point(fo, bi, r, r0, t_init, t_inf));
-        return;
+        return infinitecylinder_multiple_term_at_time_at_point(fo, bi, r, r0);
     }
     
     //semi-infinite approximation
     
-    p.temp(semi_infinite_at_time_at_point(r0-r, alpha, time, h, k, t_init, t_inf)); 
+    return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k);
+}
+
+void temp_at_point(Sphere &s, SpherePoint &p, EnvMat &envmat){
+    p.temp(theta_to_temp(theta_at_point(s, p, envmat.h()), s.t_init(), envmat.t_inf()));
+}
+void temp_at_point(PlaneWall &w, PlaneWallPoint &p, EnvMat &envmat){
+    p.temp(theta_to_temp(theta_at_point(w, p, envmat.h()), w.t_init(), envmat.t_inf()));
+}
+
+void temp_at_point(InfCylinder &icyl, InfCylinderPoint &p, EnvMat &envmat){
+    p.temp(theta_to_temp(theta_at_point(icyl, p, envmat.h()), icyl.t_init(), envmat.t_inf()));
 }
 
 
-void temp_at_point(RectBar &rb, RectBarPoint &p, string envmat, Temp t_inf){
+void temp_at_point(RectBar &rb, RectBarPoint &p, EnvMat &envmat){
     string mat = rb.mat();
     Temp t_init = rb.t_init();
     Secs time = p.time();
+    float h = envmat.h();
     
-    PlaneWall pl1 = PlaneWall(rb.getL1(), mat, t_init);
-    PlaneWall pl2 = PlaneWall(rb.getL2(), mat, t_init);
-    PlaneWall pl3 = PlaneWall(rb.getL3(), mat, t_init);
+    PlaneWall pl1 = PlaneWall(rb.l1(), mat, t_init);
+    PlaneWall pl2 = PlaneWall(rb.l2(), mat, t_init);
+    PlaneWall pl3 = PlaneWall(rb.l3(), mat, t_init);
     PlaneWallPoint p1 = PlaneWallPoint(p.rect_loc1(),time);
     PlaneWallPoint p2 = PlaneWallPoint(p.rect_loc2(),time);
     PlaneWallPoint p3 = PlaneWallPoint(p.rect_loc3(),time);
 
-    temp_at_point(pl1, p1, envmat, t_inf);
-    temp_at_point(pl2, p2, envmat, t_inf);
-    temp_at_point(pl3, p3, envmat, t_inf);
+    float theta1 = theta_at_point(pl1, p1, h);
+    float theta2 = theta_at_point(pl2, p2, h);
+    float theta3 = theta_at_point(pl3, p3, h);
     
-    float t1 = p1.temp();
-    float t2 = p2.temp();
-    float t3 = p3.temp();
-    
-    float theta1 = (t1-t_inf)/(t_init-t_inf);
-    float theta2 = (t2-t_inf)/(t_init-t_inf);
-    float theta3 = (t3-t_inf)/(t_init-t_inf);
-    
-    p.temp(theta1*theta2*theta3*(t_init-t_inf)+t_inf);
+    p.temp(theta_to_temp(theta1*theta2*theta3, t_init, envmat.t_inf()));
 }
 
 
-void temp_at_point(Cylinder &cyl, CylinderPoint &p, string envmat, Temp t_inf){
+void temp_at_point(Cylinder &cyl, CylinderPoint &p, EnvMat &envmat){
     string mat = cyl.mat();
     Temp t_init = cyl.t_init();
     Secs time = p.time();
+    float h = envmat.h();
     
-    InfCylinder icyl = InfCylinder(cyl.getRadius(),mat,t_init);
-    PlaneWall w = PlaneWall(cyl.getL(),mat,t_init);
+    InfCylinder icyl = InfCylinder(cyl.radius(),mat,t_init);
+    PlaneWall w = PlaneWall(cyl.length(),mat,t_init);
     
     InfCylinderPoint cylp = InfCylinderPoint(p.cyl_loc(),time);
     PlaneWallPoint wp = PlaneWallPoint(p.rect_loc(), time);
     
-    temp_at_point(icyl, cylp, envmat, t_inf);
-    temp_at_point(w, wp, envmat, t_inf);
+    float theta1 = theta_at_point(icyl, cylp, h);
+    float theta2 = theta_at_point(w, wp, h);
     
-    float t1 = cylp.temp();
-    float t2 = wp.temp();
-    
-    float theta1 = (t1-t_inf)/(t_init-t_inf);
-    float theta2 = (t2-t_inf)/(t_init-t_inf);
-    
-    p.temp(theta1*theta2*(t_init-t_inf)+t_inf);
+    p.temp(theta_to_temp(theta1*theta2, t_init, envmat.t_inf()));
 }
 
-void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, string envmat, Temp t_inf){
+void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, EnvMat &envmat){
     string mat = irb.mat();
     Temp t_init = irb.t_init();
     Secs time = p.time();
+    float h = envmat.h();
     
-    PlaneWall pl1 = PlaneWall(irb.getL1(), mat, t_init);
-    PlaneWall pl2 = PlaneWall(irb.getL2(), mat, t_init);
+    PlaneWall pl1 = PlaneWall(irb.l1(), mat, t_init);
+    PlaneWall pl2 = PlaneWall(irb.l2(), mat, t_init);
     PlaneWallPoint p1 = PlaneWallPoint(p.rect_loc1(),time);
     PlaneWallPoint p2 = PlaneWallPoint(p.rect_loc2(),time);
     
-    temp_at_point(pl1, p1, envmat, t_inf);
-    temp_at_point(pl2, p2, envmat, t_inf);
+    float theta1 = theta_at_point(pl1, p1, h);
+    float theta2 = theta_at_point(pl2, p2, h);
     
-    float t1 = p1.temp();
-    float t2 = p2.temp();
-    
-    float theta1 = (t1-t_inf)/(t_init-t_inf);
-    float theta2 = (t2-t_inf)/(t_init-t_inf);
-    
-    p.temp(theta1*theta2*(t_init-t_inf)+t_inf);
+    p.temp(theta_to_temp(theta1*theta2, t_init, envmat.t_inf()));
 }
+/*
+void temp_on_mesh(PlaneWall &pw, Secs secs, int mesh_density, string envmat, Temp t_inf) {
+    int num_points = mesh_density + 1; 
+    pw.temp_dist(num_points);
+    
+}*/

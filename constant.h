@@ -7,6 +7,7 @@ using namespace std;
 using Temp = float;
 using Loc = float;
 using Secs = float;
+using Dim = float;
 
 static map<string, vector<pair<float,float> > > mat_to_k {
     {"al", { {100, 302}, {200, 237}, {300, 237}, {400, 240}, {600, 231}, {800, 218} } },
@@ -21,7 +22,7 @@ static map<string, float> mat_to_h {
     {"air", 100},
     {"water", 1000} };
 
-static map<string, float> mat_to_density {
+static map<string, float> mat_to_p {
     {"al", 2702},
     {"st", 7854} };
 
@@ -61,8 +62,8 @@ static float get_h(string envmat){
     return mat_to_h[envmat];
 }
 
-static float get_density(string mat){
-    return mat_to_density[mat];
+static float get_p(string mat){
+    return mat_to_p[mat];
 }
 
 #endif

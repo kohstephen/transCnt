@@ -3,13 +3,13 @@
 #include "geometry.h"
 
 class Cylinder : public Geometry{
-	float _radius;
-	float _L;
+	Dim _radius;
+	Dim _length;
 public:
-	Cylinder(float radius, float L, string mat, Temp t_init);
+	Cylinder(Dim radius, Dim length, string mat, Temp t_init);
 	~Cylinder();
-	float getRadius();
-	float getL();
+	Dim radius();
+	Dim length();
 };
 
 #endif

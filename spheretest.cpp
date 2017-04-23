@@ -5,9 +5,9 @@
 
 int main(){
     string mat = "st";
-    string envmat = "water";
     Temp t_init = 500;
-    Temp t_inf = 300;
+
+    EnvMat envmat = EnvMat("water", 300);
     
 
     //(zeta = 1.142)
@@ -20,7 +20,7 @@ int main(){
 
     Sphere s2 = Sphere(0.001, mat, t_init);
     SpherePoint sp2 = SpherePoint(0.0005,5);
-    temp_at_point(s2, sp2, envmat, t_inf);
+    temp_at_point(s2, sp2, envmat);
     cout << sp2.temp() << endl;
 
     // Sphere s3 = Sphere(0.01);
@@ -41,13 +41,13 @@ int main(){
 
     InfCylinder ic3 = InfCylinder(0.1,mat,t_init);
     InfCylinderPoint icp3 = InfCylinderPoint(0.05,100);
-    temp_at_point(ic3, icp3, envmat, t_inf);
+    temp_at_point(ic3, icp3, envmat);
     cout << icp3.temp() << endl;
 
 
     PlaneWall w = PlaneWall(0.001, mat, t_init);
     PlaneWallPoint wp = PlaneWallPoint(0.0005f, 10.0f);
-    temp_at_point(w, wp, envmat, t_inf);
+    temp_at_point(w, wp, envmat);
     cout << wp.temp() << endl;
     //cout << p._temp << endl;
 

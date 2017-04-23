@@ -3,11 +3,11 @@
 #include "geometry.h"
 
 class InfCylinder : public Geometry{
-	float _radius;
+	Dim _radius;
 public:
-	InfCylinder(float radius, string mat, Temp t_init);
+	InfCylinder(Dim radius, string mat, Temp t_init);
 	~InfCylinder();
-	float getRadius();
+	Dim radius();
 };
 
 #endif

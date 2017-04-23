@@ -3,14 +3,17 @@
 #include "constant.h"
 #include "geometry.h"
 #include <string>
+#include "planewallpoint.h"
 
 class PlaneWall : public Geometry{
-	float _length;
+	Dim _length;
+	vector<PlaneWallPoint> _temp_dist;
 
 public:
-	PlaneWall(float length, string mat, Temp t_init);
+	PlaneWall(Dim length, string mat, Temp t_init);
 	~PlaneWall();
-	float length();
+	Dim length();
+	void temp_dist(int num_points); 
 };
 
 #endif

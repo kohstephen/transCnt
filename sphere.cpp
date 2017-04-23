@@ -1,11 +1,11 @@
 #include "sphere.h"
 
-Sphere::Sphere(float radius, string mat, Temp t_init) : Geometry(mat,t_init){
+Sphere::Sphere(Dim radius, string mat, Temp t_init) : Geometry(mat,t_init){
 		_radius = radius;
 }
 
 Sphere::~Sphere(){}
 
-float Sphere::radius(){
+Dim Sphere::radius(){
 	return _radius;
 }

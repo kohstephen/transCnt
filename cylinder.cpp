@@ -1,16 +1,16 @@
 #include "cylinder.h"
 
-Cylinder::Cylinder(float radius, float L, string mat, Temp t_init):Geometry(mat,t_init){
+Cylinder::Cylinder(Dim radius, Dim length, string mat, Temp t_init):Geometry(mat,t_init){
 	_radius = radius;
-	_L = L;
+	_length = length;
 }
 
 Cylinder::~Cylinder(){}
 
-float Cylinder::getRadius(){
+Dim Cylinder::radius(){
 	return _radius;
 }
 
-float Cylinder::getL(){
-	return _L;
+Dim Cylinder::length(){
+	return _length;
 }

@@ -9,6 +9,7 @@ public:
 	PlaneWallPoint(Loc rect_loc, Secs secs);
 	~PlaneWallPoint();
 	Loc rect_loc();
+	void rect_loc(Loc rect_loc);
 };
 
 #endif

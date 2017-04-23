@@ -3,12 +3,12 @@
 #include "geometry.h"
 
 class Sphere : public Geometry{
-	float _radius;
+	Dim _radius;
 
 public:
-	Sphere(float radius, string mat, Temp t_init);
+	Sphere(Dim radius, string mat, Temp t_init);
 	~Sphere();
-	float radius();
+	Dim radius();
 };
 
 #endif
