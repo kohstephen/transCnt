@@ -1,6 +1,6 @@
 #include "cylinder.h"
 
-Cylinder::Cylinder(Dim radius, Dim length, string mat, Temp t_init):Geometry(mat,t_init){
+Cylinder::Cylinder(Dim radius, Dim length, string mat, Kelvin t_init):Geometry(mat,t_init){
 	_radius = radius;
 	_length = length;
 }

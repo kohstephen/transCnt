@@ -5,7 +5,7 @@
 
 int main(){
     string mat = "st";
-    Temp t_init = 500;
+    Kelvin t_init = 500;
 
     EnvMat envmat = EnvMat("water", 300);
     

@@ -4,19 +4,19 @@
 
 class Geometry{
 private:
-	string _mat;
-	Temp _t_init;
+	Kelvin _t_init;
 	float _k;
 	float _c;
 	float _p;
 	float _a;
-	void calculate();
+	void calculate(string mat);
 	
 public:
-	Geometry(string mat, Temp t_init);
+	Geometry(string mat, Kelvin t_init);
+	Geometry(float k, float c, float p, Kelvin t_init);
 	~Geometry();
 	string mat();
-	Temp t_init();
+	Kelvin t_init();
 	float k();
 	float c();
 	float p();

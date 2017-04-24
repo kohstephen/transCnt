@@ -5,7 +5,7 @@
 #include <iostream>
 
 // mesh_density is the number of regions 
-PlaneWall::PlaneWall(Dim length, string mat, Temp t_init) : Geometry(mat,t_init){ 
+PlaneWall::PlaneWall(Dim length, string mat, Kelvin t_init) : Geometry(mat,t_init){ 
 	_length = length;
 	vector<PlaneWallPoint> _temp_dist;	
 }

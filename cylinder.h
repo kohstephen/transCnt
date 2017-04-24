@@ -6,7 +6,7 @@ class Cylinder : public Geometry{
 	Dim _radius;
 	Dim _length;
 public:
-	Cylinder(Dim radius, Dim length, string mat, Temp t_init);
+	Cylinder(Dim radius, Dim length, string mat, Kelvin t_init);
 	~Cylinder();
 	Dim radius();
 	Dim length();

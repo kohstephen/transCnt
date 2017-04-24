@@ -26,6 +26,7 @@ void temp_at_time(vector<float>* ret, Sphere s, string mat, string envmat,
     vector<float>& points, float time, float t_init, float t_inf);
 **/
 
+
 void temp_at_point(PlaneWall &w, PlaneWallPoint &p, EnvMat &envmat);
 
 void temp_at_point(Sphere &s, SpherePoint &p, EnvMat &envmat);
@@ -42,5 +43,14 @@ void temp_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat);
 
 void temp_dist(PlaneWall &w, int num_points, Secs secs); 
 
-    
+/**
+ * Utility function to convert Kelvin to Fahrenheit.
+ */
+float kelvin_to_fahrenheit(Kelvin k);
+
+/**
+ * Utility function to convert Kelvin to Celcius.
+ */
+float kelvin_to_celcius(Kelvin k);
+
 #endif

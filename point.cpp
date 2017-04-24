@@ -7,11 +7,11 @@ Point::Point(Secs secs){
 
 Point::~Point(){}
 
-Temp Point::temp(){
+Kelvin Point::temp(){
     return _temp;
 }
 
-void Point::temp(Temp temp){
+void Point::temp(Kelvin temp){
     _temp = temp;
 }
 

@@ -4,7 +4,7 @@
 #include <vector>
 using namespace std;
 
-using Temp = float;
+using Kelvin = float;
 using Loc = float;
 using Secs = float;
 using Dim = float;

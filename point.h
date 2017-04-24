@@ -3,13 +3,13 @@
 #include "constant.h"
 
 class Point{
-	Temp _temp;
+	Kelvin _temp;
 	Secs _secs;
 public:
 	Point(Secs secs);
 	~Point();
-	Temp temp();
-	void temp(Temp temp);
+	Kelvin temp();
+	void temp(Kelvin temp);
 	Secs time();
 };
 
