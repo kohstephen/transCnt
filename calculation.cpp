@@ -510,22 +510,22 @@ float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat){
 	float alpha = s.a();
 	float fo = fourier(alpha, time, r0);
 	if(fo > 0.2){
-        zeta = sphere_solve_for_zeta(biot,1);
+        zeta = sphere_solve_for_zeta(bi,1);
         c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
-        theta = c1*exp(-zeta*zeta*fo)
-        return theta, s.t_init(), envmat.t_inf();
+        theta = c1*exp(-zeta*zeta*fo);
+        return theta;
 	}
     
     if(fo > 0.05){
         int n = 1;
         theta = 0;
-        zeta = sphere_solve_for_zeta(biot,n);
+        zeta = sphere_solve_for_zeta(bi,n);
         c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
         theta = c1*exp(-zeta*zeta*fo);
         term_prev = theta;
         ++n;
         while(true) {
-            zeta = sphere_solve_for_zeta(biot,n);
+            zeta = sphere_solve_for_zeta(bi,n);
             c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
             term_cur = c1*exp(-zeta*zeta*fo);
             if(term_cur/term_prev > EPSILON) {
@@ -533,7 +533,7 @@ float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat){
                 term_prev = term_cur;
                 ++n;
             } else {
-                return theta, s.t_init(), envmat.t_inf();
+                return theta;
             }
         }
     }
@@ -558,22 +558,22 @@ float avg_temp_at_time(PlaneWall &w, Secs time, EnvMat &envmat){
     float alpha = w.a();
     float fo = fourier(alpha, time, L);
     if(fo > 0.2){
-        zeta = planewall_solve_for_zeta(biot,1);
+        zeta = planewall_solve_for_zeta(bi,1);
         c1 = 4.0f*sin(zeta)/(2.0f*zeta+sin(2.0f*zeta));
-        theta = c1*exp(-zeta*zeta*fourier)
-        return theta, w.t_init(), envmat.t_inf();
+        theta = c1*exp(-zeta*zeta*fo);
+        return theta;
     }
     
     if(fo > 0.05){
         int n = 1;
         theta = 0;
-        zeta = planewall_solve_for_zeta(biot,n);
+        zeta = planewall_solve_for_zeta(bi,n);
         c1 = 4.0f*sin(zeta)/(2.0f*zeta+sin(2.0f*zeta));
         theta = c1*exp(-zeta*zeta*fo);
         term_prev = theta;
         ++n;
         while(true) {
-            zeta = planewall_solve_for_zeta(biot,n);
+            zeta = planewall_solve_for_zeta(bi,n);
             c1 = 4.0f*sin(zeta)/(2.0f*zeta+sin(2.0f*zeta));
             term_cur = c1*exp(-zeta*zeta*fo);
             if(term_cur/term_prev > EPSILON) {
@@ -581,7 +581,7 @@ float avg_temp_at_time(PlaneWall &w, Secs time, EnvMat &envmat){
                 term_prev = term_cur;
                 ++n;
             } else {
-                return theta, w.t_init(), envmat.t_inf();
+                return theta;
             }
         }
     }
@@ -607,18 +607,18 @@ float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
     float alpha = icyl.a();
     float fo = fourier(alpha, time, r0);
     if(fo > 0.2){
-        zeta = cylinder_solve_for_zeta(biot,1);
+        zeta = cylinder_solve_for_zeta(bi,1);
         j0 = std::tr1::cyl_bessel_j(0,zeta);
         j1 = std::tr1::cyl_bessel_j(1,zeta);
         c1 = 2*j1/(zeta*(j0*j0+j1*j1));
-        theta = c1*exp(-zeta*zeta*fourier);
-        return theta, icyl.t_init(), envmat.t_inf();
+        theta = c1*exp(-zeta*zeta*fo);
+        return theta;
     }
     
     if(fo > 0.05){
         int n = 1;
         theta = 0;
-        zeta = cylinder_solve_for_zeta(biot,n);
+        zeta = cylinder_solve_for_zeta(bi,n);
         j0 = std::tr1::cyl_bessel_j(0,zeta);
         j1 = std::tr1::cyl_bessel_j(1,zeta);
         c1 = 2*j1/(zeta*(j0*j0+j1*j1));
@@ -626,7 +626,7 @@ float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
         term_prev = theta;
         ++n;
         while(true) {
-            zeta = cylinder_solve_for_zeta(biot,n);
+            zeta = cylinder_solve_for_zeta(bi,n);
             j0 = std::tr1::cyl_bessel_j(0,zeta);
             j1 = std::tr1::cyl_bessel_j(1,zeta);
             c1 = 2*j1/(zeta*(j0*j0+j1*j1));
@@ -636,7 +636,7 @@ float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
                 term_prev = term_cur;
                 ++n;
             } else {
-                return theta, icyl.t_init(), envmat.t_inf();
+                return theta;
             }
         }
     }
@@ -657,7 +657,7 @@ float avg_temp_at_time(RectBar &rb, Secs time, EnvMat &envmat){
     float theta2 = avg_temp_at_time(pl2, time, envmat);
     float theta3 = avg_temp_at_time(pl3, time, envmat);
     
-    retun theta1*theta2*theta3;
+    return theta1*theta2*theta3;
 }
 
 float avg_temp_at_time(Cylinder &cyl, Secs time, EnvMat &envmat){
