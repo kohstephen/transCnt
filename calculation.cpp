@@ -6,6 +6,7 @@
 extern const float PI = 3.14159265;
 float RATIO = 0.003;
 float PRECESION = 0.001;
+float EPSILON = 0.01;
 vector<float> J0zeros = {0, 2.4048, 5.5201, 8.6537, 11.7915, 14.9309};
 
 float biot(float h, float k, float x){
@@ -364,7 +365,6 @@ void temp_at_point(InfCylinder &icyl, InfCylinderPoint &p, EnvMat &envmat){
     p.temp(theta_to_temp(theta_at_point(icyl, p, envmat.h()), icyl.t_init(), envmat.t_inf()));
 }
 
-
 void temp_at_point(RectBar &rb, RectBarPoint &p, EnvMat &envmat){
     string mat = rb.mat();
     Temp t_init = rb.t_init();
@@ -463,3 +463,199 @@ void temp_dist(PlaneWall &w, int num_points, Secs secs) {
     //    cout << i.rect_loc() << ' ';
     w.temp_dist(temp_dist); 
 }
+
+float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat){
+    float r0 = s.radius();
+    float k = s.k();
+    float h = envmat.h();
+    float bi = biot(h, k, r0);
+	float density = s.p();
+    float c = s.c();
+    float zeta, c1, theta;
+    float term_cur, term_prev;
+    
+    if(bi<0.1){
+        return sphere_lumped_cap_at_time(s, density, h, c, time);
+	}
+
+	float alpha = s.a();
+	float fo = fourier(alpha, time, r0);
+	if(fo > 0.2){
+        zeta = sphere_solve_for_zeta(biot,1);
+        c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
+        theta = c1*exp(-zeta*zeta*fo)
+        return theta, s.t_init(), envmat.t_inf();
+	}
+    
+    if(fo > 0.05){
+        int n = 1;
+        theta = 0;
+        zeta = sphere_solve_for_zeta(biot,n);
+        c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
+        theta = c1*exp(-zeta*zeta*fo);
+        term_prev = theta;
+        ++n;
+        while(true) {
+            zeta = sphere_solve_for_zeta(biot,n);
+            c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
+            term_cur = c1*exp(-zeta*zeta*fo);
+            if(term_cur/term_prev > EPSILON) {
+                theta += term_cur;
+                term_prev = term_cur;
+                ++n;
+            } else {
+                return theta, s.t_init(), envmat.t_inf();
+            }
+        }
+    }
+
+    return s.t_init();
+}
+
+float avg_temp_at_time(PlaneWall &w, Secs time, EnvMat &envmat){
+    float L = w.length();
+    float k = w.k();
+    float h = envmat.h();
+    float bi = biot(h, k, L);
+    float density = w.p();
+    float c = w.c();
+    float zeta, c1, theta;
+    float term_cur, term_prev;
+    
+    if(bi<0.1){
+        return planewall_lumped_cap_at_time(w, density, h, c, time);
+    }
+
+    float alpha = w.a();
+    float fo = fourier(alpha, time, L);
+    if(fo > 0.2){
+        zeta = planewall_solve_for_zeta(biot,1);
+        c1 = 4.0f*sin(zeta)/(2.0f*zeta+sin(2.0f*zeta));
+        theta = c1*exp(-zeta*zeta*fourier)
+        return theta, w.t_init(), envmat.t_inf();
+    }
+    
+    if(fo > 0.05){
+        int n = 1;
+        theta = 0;
+        zeta = planewall_solve_for_zeta(biot,n);
+        c1 = 4.0f*sin(zeta)/(2.0f*zeta+sin(2.0f*zeta));
+        theta = c1*exp(-zeta*zeta*fo);
+        term_prev = theta;
+        ++n;
+        while(true) {
+            zeta = planewall_solve_for_zeta(biot,n);
+            c1 = 4.0f*sin(zeta)/(2.0f*zeta+sin(2.0f*zeta));
+            term_cur = c1*exp(-zeta*zeta*fo);
+            if(term_cur/term_prev > EPSILON) {
+                theta += term_cur;
+                term_prev = term_cur;
+                ++n;
+            } else {
+                return theta, w.t_init(), envmat.t_inf();
+            }
+        }
+    }
+    
+    return w.t_init();
+}
+
+float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
+    float r0 = icyl.radius();
+    float h = envmat.h();
+    float k = icyl.k();
+    float bi = biot(h, k, r0);
+    float density = icyl.p();
+    float c = icyl.c();
+    float zeta, c1, theta;
+    float term_cur, term_prev;
+    float j0, j1;
+
+    if(bi<0.1){
+        return infinitecylinder_lumped_cap_at_time(icyl, density, h, c, time);
+    }
+
+    float alpha = icyl.a();
+    float fo = fourier(alpha, time, r0);
+    if(fo > 0.2){
+        zeta = cylinder_solve_for_zeta(biot,1);
+        j0 = std::tr1::cyl_bessel_j(0,zeta);
+        j1 = std::tr1::cyl_bessel_j(1,zeta);
+        c1 = 2*j1/(zeta*(j0*j0+j1*j1));
+        theta = c1*exp(-zeta*zeta*fourier);
+        return theta, icyl.t_init(), envmat.t_inf();
+    }
+    
+    if(fo > 0.05){
+        int n = 1;
+        theta = 0;
+        zeta = cylinder_solve_for_zeta(biot,n);
+        j0 = std::tr1::cyl_bessel_j(0,zeta);
+        j1 = std::tr1::cyl_bessel_j(1,zeta);
+        c1 = 2*j1/(zeta*(j0*j0+j1*j1));
+        theta = c1*exp(-zeta*zeta*fo);
+        term_prev = theta;
+        ++n;
+        while(true) {
+            zeta = cylinder_solve_for_zeta(biot,n);
+            j0 = std::tr1::cyl_bessel_j(0,zeta);
+            j1 = std::tr1::cyl_bessel_j(1,zeta);
+            c1 = 2*j1/(zeta*(j0*j0+j1*j1));
+            term_cur = c1*exp(-zeta*zeta*fo);
+            if(term_cur/term_prev > EPSILON) {
+                theta += term_cur;
+                term_prev = term_cur;
+                ++n;
+            } else {
+                return theta, icyl.t_init(), envmat.t_inf();
+            }
+        }
+    }
+    
+    return icyl.t_init();
+}
+
+float avg_temp_at_time(RectBar &rb, Secs time, EnvMat &envmat){
+    string mat = rb.mat();
+    Temp t_init = rb.t_init();
+    float h = envmat.h();
+    
+    PlaneWall pl1 = PlaneWall(rb.l1(), mat, t_init);
+    PlaneWall pl2 = PlaneWall(rb.l2(), mat, t_init);
+    PlaneWall pl3 = PlaneWall(rb.l3(), mat, t_init);
+
+    float theta1 = avg_temp_at_time(pl1, time, envmat);
+    float theta2 = avg_temp_at_time(pl2, time, envmat);
+    float theta3 = avg_temp_at_time(pl3, time, envmat);
+    
+    retun theta1*theta2*theta3;
+}
+
+float avg_temp_at_time(Cylinder &cyl, Secs time, EnvMat &envmat){
+    string mat = cyl.mat();
+    Temp t_init = cyl.t_init();
+    float h = envmat.h();
+    
+    InfCylinder icyl = InfCylinder(cyl.radius(),mat,t_init);
+    PlaneWall w = PlaneWall(cyl.length(),mat,t_init);
+    
+    float theta1 = avg_temp_at_time(icyl, time, envmat);
+    float theta2 = avg_temp_at_time(w, time, envmat);
+    
+    return theta1*theta2;
+}
+
+float avg_temp_at_time(InfRectBar &irb, Secs time, EnvMat &envmat){
+    string mat = irb.mat();
+    Temp t_init = irb.t_init();
+    float h = envmat.h();
+    
+    PlaneWall pl1 = PlaneWall(irb.l1(), mat, t_init);
+    PlaneWall pl2 = PlaneWall(irb.l2(), mat, t_init);
+    
+    float theta1 = avg_temp_at_time(pl1, time, envmat);
+    float theta2 = avg_temp_at_time(pl2, time, envmat);
+    
+    return theta1*theta2;
+}
+
