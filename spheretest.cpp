@@ -49,6 +49,7 @@ int main(){
     PlaneWallPoint wp = PlaneWallPoint(0.0005f, 10.0f);
     temp_at_point(w, wp, envmat);
     cout << wp.temp() << endl;
+    temp_on_mesh(w, 100, 10, envmat); 
     //cout << p._temp << endl;
 
 

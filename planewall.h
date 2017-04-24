@@ -13,7 +13,7 @@ public:
 	PlaneWall(Dim length, string mat, Temp t_init);
 	~PlaneWall();
 	Dim length();
-	void temp_dist(int num_points); 
+	void temp_dist(vector<PlaneWallPoint> &temp_dist); 
 };
 
 #endif

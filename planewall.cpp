@@ -16,18 +16,6 @@ Dim PlaneWall::length(){
 	return _length;
 }
 
-/*
-friend void PlaneWall::temp_dist(int num_points) {
-    float incr = _length / (num_points - 1.0f); 
-    int counter = 0;
-    vector<PlaneWallPoint> temp_dist (num_points);
-    for (auto it = temp_dist.begin(); it != temp_dist.end(); it++) {
-    	(*it).rect_loc(counter*incr);	
-    	counter++;
-    }
-    // to check rect_loc are correctly spaced
-    for (auto i: temp_dist)
-        cout << i.rect_loc() << ' ';
-    _temp_dist = temp_dist; 
+void PlaneWall::temp_dist(vector<PlaneWallPoint> &temp_dist) {
+   _temp_dist = temp_dist; 
 }
-*/

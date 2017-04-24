@@ -420,9 +420,46 @@ void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, EnvMat &envmat){
     
     p.temp(theta_to_temp(theta1*theta2, t_init, envmat.t_inf()));
 }
-/*
-void temp_on_mesh(PlaneWall &pw, Secs secs, int mesh_density, string envmat, Temp t_inf) {
+
+void temp_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat) {
     int num_points = mesh_density + 1; 
-    pw.temp_dist(num_points);
+    temp_dist(w, num_points, secs);
+    float L = w.length();
+    Loc x = p.rect_loc();
+    Secs time = p.time();
+    float k = w.k();
+    float bi = biot(h, k, L);
+    float density = w.p();
+    float c = w.c();
     
-}*/
+    if(bi<0.1){
+        return planewall_lumped_cap_at_time(w, density, h, c, time);
+    }
+
+    float alpha = w.a();
+    float fo = fourier(alpha, time, L);
+    //One-Term Approximation. Use this when Fo > 0.2
+    if(fo > 0.2){
+        return planewall_one_term_at_time_at_point(fo, bi, x, L);
+    }
+    
+    //Multiple-Term Approximation.
+    if(fo > 0.05){
+        return planewall_multiple_term_at_time_at_point(fo, bi, x, L);
+    }
+    
+    //semi-infinite approximation
+    return semi_infinite_at_time_at_point(L-x, alpha, time, h, k);
+}
+
+void temp_dist(PlaneWall &w, int num_points, Secs secs) {
+    float incr = w.length() / (num_points - 1.0f); 
+    vector<PlaneWallPoint> temp_dist;
+    for (int i = 0; i < num_points; i++) {
+        temp_dist.push_back(PlaneWallPoint(i*incr, secs));	
+    }
+    // to check rect_loc are correctly spaced
+    //for (auto i: temp_dist)
+    //    cout << i.rect_loc() << ' ';
+    w.temp_dist(temp_dist); 
+}

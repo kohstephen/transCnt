@@ -38,5 +38,9 @@ void temp_at_point(Cylinder &cyl, CylinderPoint &p, EnvMat &envmat);
 
 void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, EnvMat &envmat);
 
+void temp_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat); 
+
+void temp_dist(PlaneWall &w, int num_points, Secs secs); 
+
     
 #endif
