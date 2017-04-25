@@ -5,6 +5,7 @@
 #include <valarray>
 
 extern const float PI = 3.14159265;
+//TODO: change "RATIO" to 0.01
 float RATIO = 0.003;
 float PRECESION = 0.001;
 float EPSILON = 0.01;
@@ -29,6 +30,10 @@ float fourier(float alpha, float time, float x){
 
 float theta_to_temp(float theta, float t_init, float t_inf){
     return theta*(t_init-t_inf)+t_inf;
+}
+
+float semi_inf_theta_to_temp(float theta, float t_init, float t_inf){
+    return theta*(t_inf-t_init)+t_init;
 }
 
 // only support n <= 6
@@ -272,7 +277,7 @@ semi_infinite_at_time(ret, points, alpha, time, h, k, t_init, t_inf);
 }
  **/
 
-float theta_at_point(Sphere &s, SpherePoint &p, float h){
+pair<float, bool> theta_at_point(Sphere &s, SpherePoint &p, float h){
     float r0 = s.radius();
     Loc r = p.sphere_loc();
     Secs time = p.time();
@@ -283,7 +288,7 @@ float theta_at_point(Sphere &s, SpherePoint &p, float h){
 
     //Lumped Capacitance. Use this when Bi < 0.1
     if(bi<0.1){
-        return sphere_lumped_cap_at_time(r0, density, h, c, time);
+        return pair<float, bool> (sphere_lumped_cap_at_time(r0, density, h, c, time), false);
     }
 
     //thermal diffusivity (units: m^2/s)
@@ -291,20 +296,20 @@ float theta_at_point(Sphere &s, SpherePoint &p, float h){
     float fo = fourier(alpha, time, r0);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
-        return sphere_one_term_at_time_at_point(fo, bi, r, r0);
+        return pair<float, bool> (sphere_one_term_at_time_at_point(fo, bi, r, r0), false);
     }
 
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        return sphere_multiple_term_at_time_at_point(fo, bi, r, r0);
+        return pair<float, bool> (sphere_multiple_term_at_time_at_point(fo, bi, r, r0), false);
     }
 
     //semi-infinite approximation
 
-    return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k); 
+    return pair<float, bool> (semi_infinite_at_time_at_point(r0-r, alpha, time, h, k), true); 
 }
 
-float theta_at_point(PlaneWall &w, PlaneWallPoint &p, float h){
+pair<float, bool> theta_at_point(PlaneWall &w, PlaneWallPoint &p, float h){
     float L = w.length();
     Loc x = p.rect_loc();
     Secs time = p.time();
@@ -314,26 +319,26 @@ float theta_at_point(PlaneWall &w, PlaneWallPoint &p, float h){
     float c = w.c();
 
     if(bi<0.1){
-        return planewall_lumped_cap_at_time(L, density, h, c, time);
+        return pair<float, bool> (planewall_lumped_cap_at_time(L, density, h, c, time), false);
     }
 
     float alpha = w.a();
     float fo = fourier(alpha, time, L);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
-        return planewall_one_term_at_time_at_point(fo, bi, x, L);
+        return pair<float, bool> (planewall_one_term_at_time_at_point(fo, bi, x, L), false);
     }
 
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        return planewall_multiple_term_at_time_at_point(fo, bi, x, L);
+        return pair<float, bool> (planewall_multiple_term_at_time_at_point(fo, bi, x, L), false);
     }
 
     //semi-infinite approximation
-    return semi_infinite_at_time_at_point(L-x, alpha, time, h, k);
+    return pair<float, bool> (semi_infinite_at_time_at_point(L-x, alpha, time, h, k), true);
 }
 
-float theta_at_point(InfCylinder &icyl, InfCylinderPoint &p, float h){
+pair<float, bool> theta_at_point(InfCylinder &icyl, InfCylinderPoint &p, float h){
     float r0 = icyl.radius();
     Loc r = p.cyl_loc();
     Secs time = p.time();
@@ -342,7 +347,7 @@ float theta_at_point(InfCylinder &icyl, InfCylinderPoint &p, float h){
     float density = icyl.p();
     float c = icyl.c();
     if(bi<0.1){
-        return infinitecylinder_lumped_cap_at_time(r0, density, h, c, time);
+        return pair<float, bool> (infinitecylinder_lumped_cap_at_time(r0, density, h, c, time), false);
     }
 
     //thermal diffusivity (units: m^2/s)
@@ -350,29 +355,50 @@ float theta_at_point(InfCylinder &icyl, InfCylinderPoint &p, float h){
     float fo = fourier(alpha, time, r0);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
-        return infinitecylinder_one_term_at_time_at_point(fo, bi, r, r0);
+        return pair<float, bool> (infinitecylinder_one_term_at_time_at_point(fo, bi, r, r0), false);
     }
 
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        return infinitecylinder_multiple_term_at_time_at_point(fo, bi, r, r0);
+        return pair<float, bool> (infinitecylinder_multiple_term_at_time_at_point(fo, bi, r, r0), false);
     }
 
     //semi-infinite approximation
 
-    return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k);
+    return pair<float, bool> (semi_infinite_at_time_at_point(r0-r, alpha, time, h, k), true);
 }
 
 void temp_at_point(Sphere &s, SpherePoint &p, EnvMat &envmat){
-    p.temp(theta_to_temp(theta_at_point(s, p, envmat.h()), s.t_init(), envmat.t_inf()));
+    pair<float, bool> theta_info = theta_at_point(s, p, envmat.h());
+    float theta = theta_info.first;
+    bool is_semi_inf = theta_info.second;
+    if (is_semi_inf) { 
+        p.temp(semi_inf_theta_to_temp(theta, s.t_init(), envmat.t_inf()));
+    } else {
+        p.temp(theta_to_temp(theta, s.t_init(), envmat.t_inf()));        
+    }
 }
 
 void temp_at_point(PlaneWall &w, PlaneWallPoint &p, EnvMat &envmat){
-    p.temp(theta_to_temp(theta_at_point(w, p, envmat.h()), w.t_init(), envmat.t_inf()));
+    pair<float, bool> theta_info = theta_at_point(w, p, envmat.h());
+    float theta = theta_info.first;
+    bool is_semi_inf = theta_info.second;
+    if (is_semi_inf) { 
+        p.temp(semi_inf_theta_to_temp(theta, w.t_init(), envmat.t_inf()));
+    } else {
+        p.temp(theta_to_temp(theta, w.t_init(), envmat.t_inf()));        
+    }
 }
 
 void temp_at_point(InfCylinder &icyl, InfCylinderPoint &p, EnvMat &envmat){
-    p.temp(theta_to_temp(theta_at_point(icyl, p, envmat.h()), icyl.t_init(), envmat.t_inf()));
+    pair<float, bool> theta_info = theta_at_point(icyl, p, envmat.h());
+    float theta = theta_info.first;
+    bool is_semi_inf = theta_info.second;
+    if (is_semi_inf) { 
+        p.temp(semi_inf_theta_to_temp(theta, icyl.t_init(), envmat.t_inf()));
+    } else {
+        p.temp(theta_to_temp(theta, icyl.t_init(), envmat.t_inf()));        
+    }
 }
 
 void temp_at_point(RectBar &rb, RectBarPoint &p, EnvMat &envmat){
@@ -391,9 +417,9 @@ void temp_at_point(RectBar &rb, RectBarPoint &p, EnvMat &envmat){
     PlaneWallPoint p2 = PlaneWallPoint(p.rect_loc2(),time);
     PlaneWallPoint p3 = PlaneWallPoint(p.rect_loc3(),time);
 
-    float theta1 = theta_at_point(pl1, p1, h);
-    float theta2 = theta_at_point(pl2, p2, h);
-    float theta3 = theta_at_point(pl3, p3, h);
+    float theta1 = theta_at_point(pl1, p1, h).first;
+    float theta2 = theta_at_point(pl2, p2, h).first;
+    float theta3 = theta_at_point(pl3, p3, h).first;
 
     p.temp(theta_to_temp(theta1*theta2*theta3, t_init, envmat.t_inf()));
 }
@@ -413,8 +439,8 @@ void temp_at_point(Cylinder &cyl, CylinderPoint &p, EnvMat &envmat){
     InfCylinderPoint cylp = InfCylinderPoint(p.cyl_loc(),time);
     PlaneWallPoint wp = PlaneWallPoint(p.rect_loc(), time);
 
-    float theta1 = theta_at_point(icyl, cylp, h);
-    float theta2 = theta_at_point(w, wp, h);
+    float theta1 = theta_at_point(icyl, cylp, h).first;
+    float theta2 = theta_at_point(w, wp, h).first;
 
     p.temp(theta_to_temp(theta1*theta2, t_init, envmat.t_inf()));
 }
@@ -433,8 +459,8 @@ void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, EnvMat &envmat){
     PlaneWallPoint p1 = PlaneWallPoint(p.rect_loc1(),time);
     PlaneWallPoint p2 = PlaneWallPoint(p.rect_loc2(),time);
 
-    float theta1 = theta_at_point(pl1, p1, h);
-    float theta2 = theta_at_point(pl2, p2, h);
+    float theta1 = theta_at_point(pl1, p1, h).first;
+    float theta2 = theta_at_point(pl2, p2, h).first;
 
     p.temp(theta_to_temp(theta1*theta2, t_init, envmat.t_inf()));
 }
@@ -475,7 +501,7 @@ valarray<float> multiple_term_at_time_on_mesh(float fo, float bi, valarray<float
 valarray<float> semi_infinite_at_time_on_mesh(valarray<float> x, float alpha, float time, float h, float k){
     float y = sqrt(alpha*time);
     valarray<float> z (x/(2*y));
-    // probably will not be allowed to do erfc on valarrays -- will have to iterate over each element in valarray
+    // not allowed to do erfc on valarrays -- have to iterate over each element in valarray
     valarray<float> theta (x.size());
     for (int i = 0; i < theta.size(); i++) { 
         theta[i] = erfc(z[i]) - exp(h*x[i]/k + h*h*alpha*time/(k*k))*erfc(z[i]+h*y/k);
@@ -483,7 +509,7 @@ valarray<float> semi_infinite_at_time_on_mesh(valarray<float> x, float alpha, fl
     return theta;
 }
 
-valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat) {
+pair<valarray<float>, bool> theta_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat) {
     // temp_dist(w, num_points, secs);
     int num_points = mesh_density + 1; 
     float L = w.length();
@@ -497,35 +523,53 @@ valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat 
         locs[i] = i*incr;	
     }
     if(bi<0.1){
-        return lumped_cap_on_mesh(w, envmat, locs, secs);
+        cout << "LUMPED" << endl;
+        return pair<valarray<float>, bool>(lumped_cap_on_mesh(w, envmat, locs, secs), false);
     }
 
     float alpha = w.a();
     float fo = fourier(alpha, secs, L);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
-        return one_term_at_time_on_mesh(fo, bi, locs, w.length());
+        cout << "ONE-TERM" << endl;
+        return pair<valarray<float>, bool>(one_term_at_time_on_mesh(fo, bi, locs, w.length()), false);
     }
 
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        return multiple_term_at_time_on_mesh(fo, bi, locs, w.length());
+        cout << "MULTI-TERM" << endl;
+        return pair<valarray<float>, bool>(multiple_term_at_time_on_mesh(fo, bi, locs, w.length()), false);
     }
 
     //semi-infinite approximation
+    cout << "SEMI-INF" << endl;
     valarray<Dim> Ls (L, locs.size());
-    return semi_infinite_at_time_on_mesh(Ls-locs, alpha, secs, h, k);
+    valarray<float> x = Ls - locs;
+    return pair<valarray<float>, bool>(semi_infinite_at_time_on_mesh(x, alpha, secs, h, k), true);
 }
 
 valarray<Kelvin> theta_to_temp(valarray<float> theta, float t_init, float t_inf){
     return theta*(t_init-t_inf)+t_inf;
 }
 
-void temp_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat){
-    valarray<Kelvin> temps = theta_to_temp(theta_on_mesh(w, secs, mesh_density, envmat), w.t_init(), envmat.t_inf()); 
+valarray<Kelvin> semi_inf_theta_to_temp(valarray<Kelvin> theta, float t_init, float t_inf){
+    return theta*(t_inf-t_init)+t_init;
+}
 
-    for (Kelvin i : temps) {
-        cout << i << ' ';
+void temp_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat){
+    pair<valarray<float>, bool> theta_info =  theta_on_mesh(w, secs, mesh_density, envmat);
+    valarray<float> thetas = theta_info.first;
+    bool is_semi_inf = theta_info.second;
+    if (is_semi_inf) {
+        valarray<Kelvin> temps = semi_inf_theta_to_temp(thetas, w.t_init(), envmat.t_inf());  
+        for (Kelvin i : temps) {
+            cout << i << ' ';
+        }
+    } else {
+        valarray<Kelvin> temps = theta_to_temp(thetas, w.t_init(), envmat.t_inf()); 
+        for (Kelvin i : temps) {
+            cout << i << ' ';
+        }
     }
 }
 
