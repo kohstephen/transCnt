@@ -7,6 +7,7 @@ class Sphere : public Geometry{
 
 public:
 	Sphere(Dim radius, string mat, Kelvin t_init);
+	Sphere(Dim radius, float k, float c, float p, Kelvin t_init);
 	~Sphere();
 	Dim radius();
 };

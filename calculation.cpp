@@ -366,6 +366,7 @@ float theta_at_point(InfCylinder &icyl, InfCylinderPoint &p, float h){
 void temp_at_point(Sphere &s, SpherePoint &p, EnvMat &envmat){
     p.temp(theta_to_temp(theta_at_point(s, p, envmat.h()), s.t_init(), envmat.t_inf()));
 }
+
 void temp_at_point(PlaneWall &w, PlaneWallPoint &p, EnvMat &envmat){
     p.temp(theta_to_temp(theta_at_point(w, p, envmat.h()), w.t_init(), envmat.t_inf()));
 }
@@ -375,14 +376,17 @@ void temp_at_point(InfCylinder &icyl, InfCylinderPoint &p, EnvMat &envmat){
 }
 
 void temp_at_point(RectBar &rb, RectBarPoint &p, EnvMat &envmat){
-    string mat = rb.mat();
-    Temp t_init = rb.t_init();
-    Secs time = p.time();
+    float k = rb.k();
+    float c = rb.c();
+    float density = rb.p();
+    Kelvin t_init = rb.t_init();
     float h = envmat.h();
+    Secs time = p.time();
     
-    PlaneWall pl1 = PlaneWall(rb.l1(), mat, t_init);
-    PlaneWall pl2 = PlaneWall(rb.l2(), mat, t_init);
-    PlaneWall pl3 = PlaneWall(rb.l3(), mat, t_init);
+    PlaneWall pl1 = PlaneWall(rb.l1(), k,c,density, t_init);
+    PlaneWall pl2 = PlaneWall(rb.l2(), k,c,density, t_init);
+    PlaneWall pl3 = PlaneWall(rb.l3(), k,c,density, t_init);
+    
     PlaneWallPoint p1 = PlaneWallPoint(p.rect_loc1(),time);
     PlaneWallPoint p2 = PlaneWallPoint(p.rect_loc2(),time);
     PlaneWallPoint p3 = PlaneWallPoint(p.rect_loc3(),time);
@@ -396,13 +400,15 @@ void temp_at_point(RectBar &rb, RectBarPoint &p, EnvMat &envmat){
 
 
 void temp_at_point(Cylinder &cyl, CylinderPoint &p, EnvMat &envmat){
-    string mat = cyl.mat();
-    Temp t_init = cyl.t_init();
-    Secs time = p.time();
+    float k = cyl.k();
+    float c = cyl.c();
+    float density = cyl.p();
+    Kelvin t_init = cyl.t_init();
     float h = envmat.h();
-    
-    InfCylinder icyl = InfCylinder(cyl.radius(),mat,t_init);
-    PlaneWall w = PlaneWall(cyl.length(),mat,t_init);
+    Secs time = p.time();
+
+    InfCylinder icyl = InfCylinder(cyl.radius(),k,c,density,t_init);
+    PlaneWall w = PlaneWall(cyl.length(),k,c,density,t_init);
     
     InfCylinderPoint cylp = InfCylinderPoint(p.cyl_loc(),time);
     PlaneWallPoint wp = PlaneWallPoint(p.rect_loc(), time);
@@ -414,13 +420,16 @@ void temp_at_point(Cylinder &cyl, CylinderPoint &p, EnvMat &envmat){
 }
 
 void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, EnvMat &envmat){
-    string mat = irb.mat();
-    Temp t_init = irb.t_init();
-    Secs time = p.time();
+    float k = irb.k();
+    float c = irb.c();
+    float density = irb.p();
+    Kelvin t_init = irb.t_init();
     float h = envmat.h();
+    Secs time = p.time();
+  
+    PlaneWall pl1 = PlaneWall(irb.l1(), k,c,density, t_init);
+    PlaneWall pl2 = PlaneWall(irb.l2(), k,c,density, t_init);
     
-    PlaneWall pl1 = PlaneWall(irb.l1(), mat, t_init);
-    PlaneWall pl2 = PlaneWall(irb.l2(), mat, t_init);
     PlaneWallPoint p1 = PlaneWallPoint(p.rect_loc1(),time);
     PlaneWallPoint p2 = PlaneWallPoint(p.rect_loc2(),time);
     
@@ -430,28 +439,56 @@ void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, EnvMat &envmat){
     p.temp(theta_to_temp(theta1*theta2, t_init, envmat.t_inf()));
 }
 
-valarray<Kelvin> theta_to_temp(valarray<float> theta, float t_init, float t_inf){
-    return theta*(t_init-t_inf)+t_inf;
-}
-
 valarray<float> lumped_cap_on_mesh(PlaneWall &w, EnvMat &envmat, valarray<Loc> locs, Secs secs) {
-    valarray<float> theta (exp(-1 * envmat.h*secs/(envmat.density()*w.length()*w.c())), locs.size());
+    valarray<float> theta (exp(-1 * envmat.h()*secs/(w.p()*w.length()*w.c())), locs.size());
     return theta;
 }
 
-valarray<float> one_term_at_time_on_mesh(float fo, float bi, vector<float> locs) {
-      
+valarray<float> one_term_at_time_on_mesh(float fo, float bi, valarray<float> locs, Dim L) {
+    float zeta = planewall_solve_for_zeta(bi, 1);
+    float c1 = 4.0f*sin(zeta)/(2.0f*zeta+sin(2.0f*zeta));
+    valarray<float> theta = c1*exp(-zeta*zeta*fo)*cos(zeta*locs/L);      
+    return theta;
 }
 
-valarray<float> multiple_term_at_time_on_mesh(float fo, float bi, vector<float> locs) {
-     
+valarray<float> multiple_term_at_time_on_mesh(float fo, float bi, valarray<float> locs, Dim L) {
+    valarray<float> theta (locs.size());
+    int n = 1;
+    float zeta_n, zeta_n_1, c_n, c_n_1;
+    while(true){
+        if(n>1){
+            zeta_n_1 = zeta_n;
+            c_n_1 = c_n;
+        }
+        zeta_n = planewall_solve_for_zeta(bi, n);
+        c_n = 4.0f*sin(zeta_n)/(2.0f*zeta_n+sin(2.0f*zeta_n));
+        if(n>1){
+            float ratio = abs(c_n*exp(-zeta_n*zeta_n*fo)/(c_n_1*exp(-zeta_n_1*zeta_n_1*fo)));
+            if(ratio < RATIO) break;
+        }
+        theta += c_n*exp(-zeta_n*zeta_n*fo)*cos(zeta_n*locs/L);
+        n += 1;
+    }
+    return theta;     
 }
 
-void theta_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat) {
+valarray<float> semi_infinite_at_time_on_mesh(valarray<float> x, float alpha, float time, float h, float k){
+    float y = sqrt(alpha*time);
+    valarray<float> z (x/(2*y));
+    // probably will not be allowed to do erfc on valarrays -- will have to iterate over each element in valarray
+    valarray<float> theta (x.size());
+    for (int i = 0; i < theta.size(); i++) { 
+        theta[i] = erfc(z[i]) - exp(h*x[i]/k + h*h*alpha*time/(k*k))*erfc(z[i]+h*y/k);
+    }
+    return theta;
+}
+
+valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat) {
     // temp_dist(w, num_points, secs);
     int num_points = mesh_density + 1; 
     float L = w.length();
     float k = w.k();
+    float h = envmat.h();
     float bi = biot(h, k, L);
     valarray<Loc> locs (num_points);  
     float incr = w.length() / mesh_density; 
@@ -467,31 +504,30 @@ void theta_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat) {
     float fo = fourier(alpha, secs, L);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
-        return one_term_at_time_on_mesh(fo, bi, locs);
+        return one_term_at_time_on_mesh(fo, bi, locs, w.length());
     }
     
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        return multiple_term_at_time_on_mesh(fo, bi, locs);
+        return multiple_term_at_time_on_mesh(fo, bi, locs, w.length());
     }
     
     //semi-infinite approximation
-    return semi_infinite_at_time_on_mesh(L-x, alpha, secs, h, k);
+    valarray<Dim> Ls (L, locs.size());
+    return semi_infinite_at_time_on_mesh(Ls-locs, alpha, secs, h, k);
 }
 
-/*
-void temp_dist(PlaneWall &w, int num_points, Secs secs) {
-    float incr = w.length() / (num_points - 1.0f); 
-    vector<PlaneWallPoint> temp_dist;
-    for (int i = 0; i < num_points; i++) {
-        temp_dist.push_back(PlaneWallPoint(i*incr, secs));	
-    }
-    // to check rect_loc are correctly spaced
-    //for (auto i: temp_dist)
-    //    cout << i.rect_loc() << ' ';
-    w.temp_dist(temp_dist); 
+valarray<Kelvin> theta_to_temp(valarray<float> theta, float t_init, float t_inf){
+    return theta*(t_init-t_inf)+t_inf;
 }
-<<<<<<< Updated upstream
+
+void temp_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat){
+    valarray<Kelvin> temps = theta_to_temp(theta_on_mesh(w, secs, mesh_density, envmat), w.t_init(), envmat.t_inf()); 
+
+    for (Kelvin i : temps) {
+        cout << i << ' ';
+    }
+}
 
 float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat){
     float r0 = s.radius();
@@ -505,7 +541,6 @@ float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat){
     
     if(bi<0.1){
         return sphere_lumped_cap_at_time(s, density, h, c, time);
-	}
 
 	float alpha = s.a();
 	float fo = fourier(alpha, time, r0);
@@ -645,13 +680,15 @@ float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
 }
 
 float avg_temp_at_time(RectBar &rb, Secs time, EnvMat &envmat){
-    string mat = rb.mat();
+    float k = rb.k();
+    float c = rb.c();
+    float density = rb.p();
     Temp t_init = rb.t_init();
     float h = envmat.h();
     
-    PlaneWall pl1 = PlaneWall(rb.l1(), mat, t_init);
-    PlaneWall pl2 = PlaneWall(rb.l2(), mat, t_init);
-    PlaneWall pl3 = PlaneWall(rb.l3(), mat, t_init);
+    PlaneWall pl1 = PlaneWall(rb.l1(), k,c,density, t_init);
+    PlaneWall pl2 = PlaneWall(rb.l2(), k,c,density, t_init);
+    PlaneWall pl3 = PlaneWall(rb.l3(), k,c,density, t_init);
 
     float theta1 = avg_temp_at_time(pl1, time, envmat);
     float theta2 = avg_temp_at_time(pl2, time, envmat);
@@ -661,12 +698,14 @@ float avg_temp_at_time(RectBar &rb, Secs time, EnvMat &envmat){
 }
 
 float avg_temp_at_time(Cylinder &cyl, Secs time, EnvMat &envmat){
-    string mat = cyl.mat();
+    float k = cyl.k();
+    float c = cyl.c();
+    float density = cyl.p();
     Temp t_init = cyl.t_init();
     float h = envmat.h();
     
-    InfCylinder icyl = InfCylinder(cyl.radius(),mat,t_init);
-    PlaneWall w = PlaneWall(cyl.length(),mat,t_init);
+    InfCylinder icyl = InfCylinder(cyl.radius(),k,c,density,t_init);
+    PlaneWall w = PlaneWall(cyl.length(),k,c,density,t_init);
     
     float theta1 = avg_temp_at_time(icyl, time, envmat);
     float theta2 = avg_temp_at_time(w, time, envmat);
@@ -675,19 +714,17 @@ float avg_temp_at_time(Cylinder &cyl, Secs time, EnvMat &envmat){
 }
 
 float avg_temp_at_time(InfRectBar &irb, Secs time, EnvMat &envmat){
-    string mat = irb.mat();
+    float k = irb.k();
+    float c = irb.c();
+    float density = irb.p();
     Temp t_init = irb.t_init();
     float h = envmat.h();
     
-    PlaneWall pl1 = PlaneWall(irb.l1(), mat, t_init);
-    PlaneWall pl2 = PlaneWall(irb.l2(), mat, t_init);
+    PlaneWall pl1 = PlaneWall(irb.l1(), k,c,density, t_init);
+    PlaneWall pl2 = PlaneWall(irb.l2(), k,c,density, t_init);
     
     float theta1 = avg_temp_at_time(pl1, time, envmat);
     float theta2 = avg_temp_at_time(pl2, time, envmat);
     
     return theta1*theta2;
 }
-
-=======
-*/
->>>>>>> Stashed changes

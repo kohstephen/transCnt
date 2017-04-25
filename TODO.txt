@@ -1,6 +1,6 @@
 - Ying make all geometries own their k, c, p, and a by having material be a class instead of string
 - Ying make environment class that owns envmat and t_inf
-- Linjie implement avg temp functions
+DONE - Linjie implement avg temp functions
 - Linjie graphs of temp vs. time
     - single point over specified time range given time sampling density
     - entire object's avg temp, min, and max temp over specified time range given time sampling density
@@ -25,4 +25,3 @@
 - Linjie Makefile
 - Testcases
 - Performance eval
-- maybe user study  

@@ -15,7 +15,6 @@ public:
 	Geometry(string mat, Kelvin t_init);
 	Geometry(float k, float c, float p, Kelvin t_init);
 	~Geometry();
-	string mat();
 	Kelvin t_init();
 	float k();
 	float c();

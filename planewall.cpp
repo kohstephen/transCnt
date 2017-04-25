@@ -10,6 +10,10 @@ PlaneWall::PlaneWall(Dim length, string mat, Kelvin t_init) : Geometry(mat,t_ini
 	vector<PlaneWallPoint> _temp_dist;	
 }
 
+PlaneWall::PlaneWall(Dim length, float k, float c, float p, Kelvin t_init):Geometry(k,c,p,t_init){
+	_length = length;
+}
+
 PlaneWall::~PlaneWall(){}
 
 Dim PlaneWall::length(){

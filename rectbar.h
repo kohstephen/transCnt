@@ -8,6 +8,7 @@ class RectBar : public Geometry{
 	Dim _L_3;
 public:
 	RectBar(Dim L_1, Dim L_2, Dim L_3, string mat, Kelvin t_init);
+	RectBar(Dim L_1, Dim L_2, Dim L_3, float k, float c, float p, Kelvin t_init);
 	~RectBar();
 	Dim l1();
 	Dim l2();

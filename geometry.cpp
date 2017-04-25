@@ -14,10 +14,6 @@ Geometry::Geometry(float k, float c, float p, Kelvin t_init){
 
 Geometry::~Geometry(){}
 
-string Geometry::mat(){
-    return _mat;
-}
-
 Kelvin Geometry::t_init(){
     return _t_init;
 }

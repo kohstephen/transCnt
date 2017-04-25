@@ -11,6 +11,7 @@ class PlaneWall : public Geometry{
 
 public:
 	PlaneWall(Dim length, string mat, Kelvin t_init);
+	PlaneWall(Dim length, float k, float c, float p, Kelvin t_init);
 	~PlaneWall();
 	Dim length();
 	void temp_dist(vector<PlaneWallPoint> &temp_dist); 

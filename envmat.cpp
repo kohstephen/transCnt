@@ -1,6 +1,6 @@
 #include "envmat.h"
 
-EnvMat::EnvMat(Kelvin envmat, Temp t_inf){
+EnvMat::EnvMat(string envmat, Kelvin t_inf){
     _t_inf = t_inf;
     _h = get_h(envmat);
 }

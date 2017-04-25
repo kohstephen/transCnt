@@ -5,6 +5,12 @@ InfRectBar::InfRectBar(Dim L_1, Dim L_2, string mat, Kelvin t_init):Geometry(mat
 	_L_2 = L_2;
 }
 
+InfRectBar::InfRectBar(Dim L_1, Dim L_2, float k, float c, float p, Kelvin t_init):Geometry(k,c,p,t_init){
+	_L_1 = L_1;
+	_L_2 = L_2;
+}
+
+
 InfRectBar::~InfRectBar(){}
 
 Dim InfRectBar::l1(){
