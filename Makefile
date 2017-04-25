@@ -3,9 +3,9 @@ CPPFLAGS = --std=c++17 -g -o2
 
 all:
 	$(CXX) $(CPPFLAGS) -shared -o libtranscnt.so -fPIC *.cpp
-spheretest:
-	$(CXX) $(CPPFLAGS) -L. -ltranscnt spheretest.cpp -o spheretest
+test:
+	$(CXX) $(CPPFLAGS) -L. -ltranscnt test.cpp -o test 
 val:
-	valgrind --leak-check=full --track-origins=yes ./spheretest
+	valgrind --leak-check=full --track-origins=yes ./test
 clean:
-	rm spheretest
+	rm libtranscnt.so test

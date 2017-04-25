@@ -499,7 +499,7 @@ valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat 
         locs[i] = i*incr;	
     }
     if(bi<0.1){
-        cout << "LUMPED" << endl;
+        // cout << "LUMPED" << endl;
         return lumped_cap_on_mesh(w, envmat, locs, secs);
     }
 
@@ -507,18 +507,18 @@ valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat 
     float fo = fourier(alpha, secs, L);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
-        cout << "ONE-TERM" << endl;
+        // cout << "ONE-TERM" << endl;
         return one_term_at_time_on_mesh(fo, bi, locs, w.length());
     }
 
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        cout << "MULTI-TERM" << endl;
+        // cout << "MULTI-TERM" << endl;
         return multiple_term_at_time_on_mesh(fo, bi, locs, w.length());
     }
 
     //semi-infinite approximation
-    cout << "SEMI-INF" << endl;
+    // cout << "SEMI-INF" << endl;
     valarray<Dim> Ls (L, locs.size());
     valarray<float> x = Ls - locs;
     return semi_infinite_at_time_on_mesh(x, alpha, secs, h, k);
