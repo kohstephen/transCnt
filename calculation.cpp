@@ -760,6 +760,7 @@ pair<PlaneWallPoint,PlaneWallPoint> min_max_points(PlaneWall &w, Secs time, EnvM
     }
 }
 
+//TODO
 pair<InfCylinderPoint,InfCylinderPoint> min_max_points(InfCylinder &icyl, Secs time, EnvMat &envmat){
     InfCylinderPoint p1 = InfCylinderPoint(0, time);
     InfCylinderPoint p2 = InfCylinderPoint(icyl.radius(), time);
@@ -768,5 +769,41 @@ pair<InfCylinderPoint,InfCylinderPoint> min_max_points(InfCylinder &icyl, Secs t
         return make_pair<InfCylinderPoint, InfCylinderPoint>(move(p2), move(p1));
     } else {
         return make_pair<InfCylinderPoint, InfCylinderPoint>(move(p1), move(p2));
+    }
+}
+
+//TODO
+pair<RectBarPoint,RectBarPoint> min_max_points(RectBar &rb, Secs time, EnvMat &envmat){
+    RectBarPoint p1 = RectBarPoint(0, 0, 0, time);
+    RectBarPoint p2 = RectBarPoint(rb.l1(), rb.l2(), rb.l3(), time);
+
+    if(rb.t_init() > envmat.t_inf()) {
+        return make_pair<RectBarPoint, RectBarPoint>(move(p2), move(p1));
+    } else {
+        return make_pair<RectBarPoint, RectBarPoint>(move(p1), move(p2));
+    }
+}
+
+//TODO
+pair<CylinderPoint,CylinderPoint> min_max_points(Cylinder &cyl, Secs time, EnvMat &envmat){
+    CylinderPoint p1 = CylinderPoint(0, 0, time);
+    CylinderPoint p2 = CylinderPoint(cyl.radius(), cyl.length(), time);
+
+    if(cyl.t_init() > envmat.t_inf()) {
+        return make_pair<CylinderPoint, CylinderPoint>(move(p2), move(p1));
+    } else {
+        return make_pair<CylinderPoint, CylinderPoint>(move(p1), move(p2));
+    }
+}
+
+//TODO
+pair<InfRectBarPoint,InfRectBarPoint> min_max_points(InfRectBar &irb, Secs time, EnvMat &envmat){
+    InfRectBarPoint p1 = InfRectBarPoint(0, 0, time);
+    InfRectBarPoint p2 = InfRectBarPoint(irb.l1(), irb.l2(), time);
+
+    if(irb.t_init() > envmat.t_inf()) {
+        return make_pair<InfRectBarPoint, InfRectBarPoint>(move(p2), move(p1));
+    } else {
+        return make_pair<InfRectBarPoint, InfRectBarPoint>(move(p1), move(p2));
     }
 }
