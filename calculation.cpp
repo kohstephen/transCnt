@@ -3,6 +3,7 @@
 #include <iostream>
 #include "calculation.h"
 #include <valarray>
+#include "gnuplot-iostream/gnuplot-iostream.h"
 
 extern const float PI = 3.14159265;
 //TODO: change "RATIO" to 0.01
