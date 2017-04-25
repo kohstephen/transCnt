@@ -736,3 +736,37 @@ float avg_temp_at_time(InfRectBar &irb, Secs time, EnvMat &envmat){
 
     return theta1*theta2;
 }
+
+pair<SpherePoint,SpherePoint> min_max_points(Sphere &s, Secs time, EnvMat &envmat){
+    SpherePoint p1 = SpherePoint(0, time);
+    SpherePoint p2 = SpherePoint(s.radius(), time);
+
+    if(s.t_init() > envmat.t_inf()) {
+        return make_pair<SpherePoint, SpherePoint>(move(p2), move(p1));
+    } else {
+        return make_pair<SpherePoint, SpherePoint>(move(p1), move(p2));
+    }
+}
+
+//TODO
+pair<PlaneWallPoint,PlaneWallPoint> min_max_points(PlaneWall &w, Secs time, EnvMat &envmat){
+    PlaneWallPoint p1 = PlaneWallPoint(0, time);
+    PlaneWallPoint p2 = PlaneWallPoint(w.length(), time);
+
+    if(w.t_init() > envmat.t_inf()) {
+        return make_pair<PlaneWallPoint, PlaneWallPoint>(move(p2), move(p1));
+    } else {
+        return make_pair<PlaneWallPoint, PlaneWallPoint>(move(p1), move(p2));
+    }
+}
+
+pair<InfCylinderPoint,InfCylinderPoint> min_max_points(InfCylinder &icyl, Secs time, EnvMat &envmat){
+    InfCylinderPoint p1 = InfCylinderPoint(0, time);
+    InfCylinderPoint p2 = InfCylinderPoint(icyl.radius(), time);
+
+    if(icyl.t_init() > envmat.t_inf()) {
+        return make_pair<InfCylinderPoint, InfCylinderPoint>(move(p2), move(p1));
+    } else {
+        return make_pair<InfCylinderPoint, InfCylinderPoint>(move(p1), move(p2));
+    }
+}
