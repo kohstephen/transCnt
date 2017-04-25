@@ -5,7 +5,8 @@ DONE - Linjie implement avg temp functions
     - single point over specified time range given time sampling density
     - entire object's avg temp, min, and max temp over specified time range given time sampling density
 - STEPHEN vectorized calculations for all geometries given mesh density and densities
-  can have multiple dims
+  auto-assigned for longer dims so that as close as possible to cubical grid 
+- STEPHEN output to .csv
 - STEPHEN validate vectorized calcs with MATLAB
 - STEPHEN exception handling, including: 
     - user prevented from querying temperature at a point whose absolute value of 
