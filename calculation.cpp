@@ -19,11 +19,11 @@ float kelvin_to_celcius(Kelvin k){
 }
 
 float biot(float h, float k, float x){
-	return h*x/k;
+    return h*x/k;
 }
 
 float fourier(float alpha, float time, float x){
-	return alpha*time/(x*x);
+    return alpha*time/(x*x);
 }
 
 
@@ -96,8 +96,8 @@ float planewall_lumped_cap_at_time(float L, float density, float h, float c, flo
 }
 
 float sphere_lumped_cap_at_time(float r0, float density, float h, float c, float time){
-	float theta = exp(-h*3*time/(density*r0*c));
-	return theta;
+    float theta = exp(-h*3*time/(density*r0*c));
+    return theta;
 }
 
 float infinitecylinder_one_term_at_time_at_point(float fourier, float biot, float r, float r0){
@@ -194,20 +194,20 @@ float sphere_multiple_term_at_time_at_point(float fourier, float biot, float r, 
 }
 
 /**
-void sphere_one_term_at_time(vector<float>* ret, float fourier, float biot, vector<float>& points, float r0, float t_init, float t_inf){
-    float zeta; //can we solve this directly?
-    float c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
-    float y = c1*exp(-zeta*zeta*fourier);
-    float z = zeta/r0;
-    float diff = t_init-t_inf;
-    int i = 0;
-    for(auto it = points.begin(); it != points.end(); ++it, ++i){
-        float q = z*(*it);
-        float theta = y*(1/q)*sin(q);
-        (*ret)[i] = theta*diff+t_inf;
-    }
-}
-**/
+  void sphere_one_term_at_time(vector<float>* ret, float fourier, float biot, vector<float>& points, float r0, float t_init, float t_inf){
+  float zeta; //can we solve this directly?
+  float c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
+  float y = c1*exp(-zeta*zeta*fourier);
+  float z = zeta/r0;
+  float diff = t_init-t_inf;
+  int i = 0;
+  for(auto it = points.begin(); it != points.end(); ++it, ++i){
+  float q = z*(*it);
+  float theta = y*(1/q)*sin(q);
+  (*ret)[i] = theta*diff+t_inf;
+  }
+  }
+ **/
 
 float semi_infinite_at_time_at_point(float x, float alpha, float time, float h, float k){
     float y = sqrt(alpha*time);
@@ -217,60 +217,60 @@ float semi_infinite_at_time_at_point(float x, float alpha, float time, float h, 
 }
 
 /**
-vector<float> semi_infinite_at_time(vector<float>* ret, vector<float>& points, float alpha, float time, float h, float k, float t_init, float t_inf){
-    float y = sqrt(alpha*time);
-    float z = h*h*alpha*time/(k*k);
-    float diff = t_init-t_inf;
-    int i = 0;
-    for(auto it = points.begin(); it != points.end(); ++it, ++i){
-        float x = *it;
-        float q = x/(2*y);
-        float theta = erfc(q) - exp(h*x/k + z)*erfc(q+h*y/k);
-        (*ret)[i] = theta*diff+t_inf;
-    }
-}
-**/
+  vector<float> semi_infinite_at_time(vector<float>* ret, vector<float>& points, float alpha, float time, float h, float k, float t_init, float t_inf){
+  float y = sqrt(alpha*time);
+  float z = h*h*alpha*time/(k*k);
+  float diff = t_init-t_inf;
+  int i = 0;
+  for(auto it = points.begin(); it != points.end(); ++it, ++i){
+  float x = *it;
+  float q = x/(2*y);
+  float theta = erfc(q) - exp(h*x/k + z)*erfc(q+h*y/k);
+  (*ret)[i] = theta*diff+t_inf;
+  }
+  }
+ **/
 
 /**
-void temp_at_time(vector<float>* ret, Sphere s, string mat, string envmat, vector<float>& points, float time, float t_init, float t_inf){
-    float r0 = s.getRadius();
-    
-    //heat transfer coefficient (units: W/m^2K)
-    float h = get_h(envmat);
-    //conduction coefficient (units: W/mK)
-    float k = get_k(mat, t_init);
-    float bi = biot(h, k, r0);
-    //Lumped Capacitance. Use this when Bi < 0.1
-    // saved data
-    float density = get_density(mat);
-    float c = get_c(mat, t_init);
-    if(bi<0.1){
-        float temp =  sphere_lumped_cap_at_time(s, density, h, c, time, t_init, t_inf);
-        for(int i = 0; i < points.size(); i++){
-            (*ret)[i] = temp;
-        }
-        return;
-    }
-    
-    //thermal diffusivity (units: m^2/s)
-    float alpha = calculate_alpha(k, density, c);
-    float fo = fourier(alpha, time, r0);
-    //One-Term Approximation. Use this when Fo > 0.2
-    if(fo > 0.2){
-        sphere_one_term_at_time(ret, fo, bi, points, r0, t_init, t_inf);
-        return;
-    }
-    
-    //Saved data.
-    if(fo > 0.05){
-        
-    }
-    
-    //semi-infinite approximation
-    semi_infinite_at_time(ret, points, alpha, time, h, k, t_init, t_inf);
-    
+  void temp_at_time(vector<float>* ret, Sphere s, string mat, string envmat, vector<float>& points, float time, float t_init, float t_inf){
+  float r0 = s.getRadius();
+
+//heat transfer coefficient (units: W/m^2K)
+float h = get_h(envmat);
+//conduction coefficient (units: W/mK)
+float k = get_k(mat, t_init);
+float bi = biot(h, k, r0);
+//Lumped Capacitance. Use this when Bi < 0.1
+// saved data
+float density = get_density(mat);
+float c = get_c(mat, t_init);
+if(bi<0.1){
+float temp =  sphere_lumped_cap_at_time(s, density, h, c, time, t_init, t_inf);
+for(int i = 0; i < points.size(); i++){
+(*ret)[i] = temp;
 }
-**/
+return;
+}
+
+//thermal diffusivity (units: m^2/s)
+float alpha = calculate_alpha(k, density, c);
+float fo = fourier(alpha, time, r0);
+//One-Term Approximation. Use this when Fo > 0.2
+if(fo > 0.2){
+sphere_one_term_at_time(ret, fo, bi, points, r0, t_init, t_inf);
+return;
+}
+
+//Saved data.
+if(fo > 0.05){
+
+}
+
+//semi-infinite approximation
+semi_infinite_at_time(ret, points, alpha, time, h, k, t_init, t_inf);
+
+}
+ **/
 
 float theta_at_point(Sphere &s, SpherePoint &p, float h){
     float r0 = s.radius();
@@ -278,29 +278,29 @@ float theta_at_point(Sphere &s, SpherePoint &p, float h){
     Secs time = p.time();
     float k = s.k(); //conduction coefficient (units: W/mK)
     float bi = biot(h, k, r0);
-	float density = s.p();
+    float density = s.p();
     float c = s.c();
-    
-	//Lumped Capacitance. Use this when Bi < 0.1
-    if(bi<0.1){
-		return sphere_lumped_cap_at_time(r0, density, h, c, time);
-	}
 
-	//thermal diffusivity (units: m^2/s)
-	float alpha = s.a();
-	float fo = fourier(alpha, time, r0);
-	//One-Term Approximation. Use this when Fo > 0.2
-	if(fo > 0.2){
+    //Lumped Capacitance. Use this when Bi < 0.1
+    if(bi<0.1){
+        return sphere_lumped_cap_at_time(r0, density, h, c, time);
+    }
+
+    //thermal diffusivity (units: m^2/s)
+    float alpha = s.a();
+    float fo = fourier(alpha, time, r0);
+    //One-Term Approximation. Use this when Fo > 0.2
+    if(fo > 0.2){
         return sphere_one_term_at_time_at_point(fo, bi, r, r0);
-	}
-    
+    }
+
     //Multiple-Term Approximation.
     if(fo > 0.05){
         return sphere_multiple_term_at_time_at_point(fo, bi, r, r0);
     }
-    
+
     //semi-infinite approximation
-    
+
     return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k); 
 }
 
@@ -312,7 +312,7 @@ float theta_at_point(PlaneWall &w, PlaneWallPoint &p, float h){
     float bi = biot(h, k, L);
     float density = w.p();
     float c = w.c();
-    
+
     if(bi<0.1){
         return planewall_lumped_cap_at_time(L, density, h, c, time);
     }
@@ -323,12 +323,12 @@ float theta_at_point(PlaneWall &w, PlaneWallPoint &p, float h){
     if(fo > 0.2){
         return planewall_one_term_at_time_at_point(fo, bi, x, L);
     }
-    
+
     //Multiple-Term Approximation.
     if(fo > 0.05){
         return planewall_multiple_term_at_time_at_point(fo, bi, x, L);
     }
-    
+
     //semi-infinite approximation
     return semi_infinite_at_time_at_point(L-x, alpha, time, h, k);
 }
@@ -352,14 +352,14 @@ float theta_at_point(InfCylinder &icyl, InfCylinderPoint &p, float h){
     if(fo > 0.2){
         return infinitecylinder_one_term_at_time_at_point(fo, bi, r, r0);
     }
-    
+
     //Multiple-Term Approximation.
     if(fo > 0.05){
         return infinitecylinder_multiple_term_at_time_at_point(fo, bi, r, r0);
     }
-    
+
     //semi-infinite approximation
-    
+
     return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k);
 }
 
@@ -382,11 +382,11 @@ void temp_at_point(RectBar &rb, RectBarPoint &p, EnvMat &envmat){
     Kelvin t_init = rb.t_init();
     float h = envmat.h();
     Secs time = p.time();
-    
+
     PlaneWall pl1 = PlaneWall(rb.l1(), k,c,density, t_init);
     PlaneWall pl2 = PlaneWall(rb.l2(), k,c,density, t_init);
     PlaneWall pl3 = PlaneWall(rb.l3(), k,c,density, t_init);
-    
+
     PlaneWallPoint p1 = PlaneWallPoint(p.rect_loc1(),time);
     PlaneWallPoint p2 = PlaneWallPoint(p.rect_loc2(),time);
     PlaneWallPoint p3 = PlaneWallPoint(p.rect_loc3(),time);
@@ -394,7 +394,7 @@ void temp_at_point(RectBar &rb, RectBarPoint &p, EnvMat &envmat){
     float theta1 = theta_at_point(pl1, p1, h);
     float theta2 = theta_at_point(pl2, p2, h);
     float theta3 = theta_at_point(pl3, p3, h);
-    
+
     p.temp(theta_to_temp(theta1*theta2*theta3, t_init, envmat.t_inf()));
 }
 
@@ -409,13 +409,13 @@ void temp_at_point(Cylinder &cyl, CylinderPoint &p, EnvMat &envmat){
 
     InfCylinder icyl = InfCylinder(cyl.radius(),k,c,density,t_init);
     PlaneWall w = PlaneWall(cyl.length(),k,c,density,t_init);
-    
+
     InfCylinderPoint cylp = InfCylinderPoint(p.cyl_loc(),time);
     PlaneWallPoint wp = PlaneWallPoint(p.rect_loc(), time);
-    
+
     float theta1 = theta_at_point(icyl, cylp, h);
     float theta2 = theta_at_point(w, wp, h);
-    
+
     p.temp(theta_to_temp(theta1*theta2, t_init, envmat.t_inf()));
 }
 
@@ -426,16 +426,16 @@ void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, EnvMat &envmat){
     Kelvin t_init = irb.t_init();
     float h = envmat.h();
     Secs time = p.time();
-  
+
     PlaneWall pl1 = PlaneWall(irb.l1(), k,c,density, t_init);
     PlaneWall pl2 = PlaneWall(irb.l2(), k,c,density, t_init);
-    
+
     PlaneWallPoint p1 = PlaneWallPoint(p.rect_loc1(),time);
     PlaneWallPoint p2 = PlaneWallPoint(p.rect_loc2(),time);
-    
+
     float theta1 = theta_at_point(pl1, p1, h);
     float theta2 = theta_at_point(pl2, p2, h);
-    
+
     p.temp(theta_to_temp(theta1*theta2, t_init, envmat.t_inf()));
 }
 
@@ -506,12 +506,12 @@ valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat 
     if(fo > 0.2){
         return one_term_at_time_on_mesh(fo, bi, locs, w.length());
     }
-    
+
     //Multiple-Term Approximation.
     if(fo > 0.05){
         return multiple_term_at_time_on_mesh(fo, bi, locs, w.length());
     }
-    
+
     //semi-infinite approximation
     valarray<Dim> Ls (L, locs.size());
     return semi_infinite_at_time_on_mesh(Ls-locs, alpha, secs, h, k);
@@ -534,23 +534,24 @@ float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat){
     float k = s.k();
     float h = envmat.h();
     float bi = biot(h, k, r0);
-	float density = s.p();
+    float density = s.p();
     float c = s.c();
     float zeta, c1, theta;
     float term_cur, term_prev;
-    
-    if(bi<0.1){
-        return sphere_lumped_cap_at_time(s, density, h, c, time);
 
-	float alpha = s.a();
-	float fo = fourier(alpha, time, r0);
-	if(fo > 0.2){
+    if(bi<0.1){
+        return sphere_lumped_cap_at_time(r0, density, h, c, time);
+    }
+
+    float alpha = s.a();
+    float fo = fourier(alpha, time, r0);
+    if(fo > 0.2){
         zeta = sphere_solve_for_zeta(bi,1);
         c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
         theta = c1*exp(-zeta*zeta*fo);
         return theta;
-	}
-    
+    }
+
     if(fo > 0.05){
         int n = 1;
         theta = 0;
@@ -576,6 +577,7 @@ float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat){
     return s.t_init();
 }
 
+
 float avg_temp_at_time(PlaneWall &w, Secs time, EnvMat &envmat){
     float L = w.length();
     float k = w.k();
@@ -585,9 +587,9 @@ float avg_temp_at_time(PlaneWall &w, Secs time, EnvMat &envmat){
     float c = w.c();
     float zeta, c1, theta;
     float term_cur, term_prev;
-    
+
     if(bi<0.1){
-        return planewall_lumped_cap_at_time(w, density, h, c, time);
+        return planewall_lumped_cap_at_time(L, density, h, c, time);
     }
 
     float alpha = w.a();
@@ -598,7 +600,7 @@ float avg_temp_at_time(PlaneWall &w, Secs time, EnvMat &envmat){
         theta = c1*exp(-zeta*zeta*fo);
         return theta;
     }
-    
+
     if(fo > 0.05){
         int n = 1;
         theta = 0;
@@ -620,7 +622,7 @@ float avg_temp_at_time(PlaneWall &w, Secs time, EnvMat &envmat){
             }
         }
     }
-    
+
     return w.t_init();
 }
 
@@ -636,7 +638,7 @@ float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
     float j0, j1;
 
     if(bi<0.1){
-        return infinitecylinder_lumped_cap_at_time(icyl, density, h, c, time);
+        return infinitecylinder_lumped_cap_at_time(r0, density, h, c, time);
     }
 
     float alpha = icyl.a();
@@ -649,7 +651,7 @@ float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
         theta = c1*exp(-zeta*zeta*fo);
         return theta;
     }
-    
+
     if(fo > 0.05){
         int n = 1;
         theta = 0;
@@ -675,7 +677,7 @@ float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
             }
         }
     }
-    
+
     return icyl.t_init();
 }
 
@@ -683,9 +685,9 @@ float avg_temp_at_time(RectBar &rb, Secs time, EnvMat &envmat){
     float k = rb.k();
     float c = rb.c();
     float density = rb.p();
-    Temp t_init = rb.t_init();
+    Kelvin t_init = rb.t_init();
     float h = envmat.h();
-    
+
     PlaneWall pl1 = PlaneWall(rb.l1(), k,c,density, t_init);
     PlaneWall pl2 = PlaneWall(rb.l2(), k,c,density, t_init);
     PlaneWall pl3 = PlaneWall(rb.l3(), k,c,density, t_init);
@@ -693,7 +695,7 @@ float avg_temp_at_time(RectBar &rb, Secs time, EnvMat &envmat){
     float theta1 = avg_temp_at_time(pl1, time, envmat);
     float theta2 = avg_temp_at_time(pl2, time, envmat);
     float theta3 = avg_temp_at_time(pl3, time, envmat);
-    
+
     return theta1*theta2*theta3;
 }
 
@@ -701,15 +703,15 @@ float avg_temp_at_time(Cylinder &cyl, Secs time, EnvMat &envmat){
     float k = cyl.k();
     float c = cyl.c();
     float density = cyl.p();
-    Temp t_init = cyl.t_init();
+    Kelvin t_init = cyl.t_init();
     float h = envmat.h();
-    
+
     InfCylinder icyl = InfCylinder(cyl.radius(),k,c,density,t_init);
     PlaneWall w = PlaneWall(cyl.length(),k,c,density,t_init);
-    
+
     float theta1 = avg_temp_at_time(icyl, time, envmat);
     float theta2 = avg_temp_at_time(w, time, envmat);
-    
+
     return theta1*theta2;
 }
 
@@ -717,14 +719,14 @@ float avg_temp_at_time(InfRectBar &irb, Secs time, EnvMat &envmat){
     float k = irb.k();
     float c = irb.c();
     float density = irb.p();
-    Temp t_init = irb.t_init();
+    Kelvin t_init = irb.t_init();
     float h = envmat.h();
-    
+
     PlaneWall pl1 = PlaneWall(irb.l1(), k,c,density, t_init);
     PlaneWall pl2 = PlaneWall(irb.l2(), k,c,density, t_init);
-    
+
     float theta1 = avg_temp_at_time(pl1, time, envmat);
     float theta2 = avg_temp_at_time(pl2, time, envmat);
-    
+
     return theta1*theta2;
 }
