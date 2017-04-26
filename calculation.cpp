@@ -754,7 +754,6 @@ valarray<float> theta_on_mesh(Sphere &s, Secs secs, int num_points, EnvMat &envm
 void output_csv(vector<SpherePoint> &pts, Secs secs) {
     ofstream myfile;
     myfile.open ("sphere.csv");
-    cout << pts.size() << endl;
     for (auto it = pts.begin(); it != pts.end(); it++) {
         myfile << (*it).sphere_loc() << "," << (*it).temp() << "\n"; 
     }
