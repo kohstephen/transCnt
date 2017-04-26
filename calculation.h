@@ -53,4 +53,8 @@ float kelvin_to_fahrenheit(Kelvin k);
  * Utility function to convert Kelvin to Celcius.
  */
 float kelvin_to_celcius(Kelvin k);
+
+// Plot
+void plot(Sphere &s, Secs start, Secs end, Secs intrv, EnvMat &envmat);
 #endif
+>>>>>>> Stashed changes

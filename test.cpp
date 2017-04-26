@@ -71,6 +71,10 @@ int main(){
     temp_on_mesh(s2, 10, 10, envmat); 
     assert(abs(sp2.temp() - s2.temp_dist()[5].temp()) < ROUNDING);    
 
+    // Plot
+    plot(s2, 0, 60, 1, envmat);
+    //cout << sp2.temp() << endl;
+
     InfCylinder ic2 = InfCylinder(0.01, mat, t_init);
     InfCylinderPoint icp2 = InfCylinderPoint(0.005,10);
     temp_at_point(ic2, icp2, envmat);

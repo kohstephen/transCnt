@@ -268,6 +268,63 @@ float semi_infinite_at_time_at_point(float x, float alpha, float time, float h, 
  * Calculate theta at a particular point for sphere.
  * To get temperature, use the theta_to_temp function.
  */
+
+/**
+  vector<float> semi_infinite_at_time(vector<float>* ret, vector<float>& points, float alpha, float time, float h, float k, float t_init, float t_inf){
+  float y = sqrt(alpha*time);
+  float z = h*h*alpha*time/(k*k);
+  float diff = t_init-t_inf;
+  int i = 0;
+  for(auto it = points.begin(); it != points.end(); ++it, ++i){
+  float x = *it;
+  float q = x/(2*y);
+  float theta = erfc(q) - exp(h*x/k + z)*erfc(q+h*y/k);
+  (*ret)[i] = theta*diff+t_inf;
+  }
+  }
+ **/
+
+/**
+  void temp_at_time(vector<float>* ret, Sphere s, string mat, string envmat, vector<float>& points, float time, float t_init, float t_inf){
+  float r0 = s.getRadius();
+
+//heat transfer coefficient (units: W/m^2K)
+float h = get_h(envmat);
+//conduction coefficient (units: W/mK)
+float k = get_k(mat, t_init);
+float bi = biot(h, k, r0);
+//Lumped Capacitance. Use this when Bi < 0.1
+// saved data
+float density = get_density(mat);
+float c = get_c(mat, t_init);
+if(bi<0.1){
+float temp =  sphere_lumped_cap_at_time(s, density, h, c, time, t_init, t_inf);
+for(int i = 0; i < points.size(); i++){
+(*ret)[i] = temp;
+}
+return;
+}
+
+//thermal diffusivity (units: m^2/s)
+float alpha = calculate_alpha(k, density, c);
+float fo = fourier(alpha, time, r0);
+//One-Term Approximation. Use this when Fo > 0.2
+if(fo > 0.2){
+sphere_one_term_at_time(ret, fo, bi, points, r0, t_init, t_inf);
+return;
+}
+
+//Saved data.
+if(fo > 0.05){
+
+}
+
+//semi-infinite approximation
+semi_infinite_at_time(ret, points, alpha, time, h, k, t_init, t_inf);
+
+}
+ **/
+
 float theta_at_point(Sphere &s, SpherePoint &p, float h){
     float r0 = s.radius();
     Loc r = p.sphere_loc();
@@ -996,7 +1053,6 @@ pair<SpherePoint,SpherePoint> min_max_points(Sphere &s, Secs time, EnvMat &envma
     }
 }
 
-//TODO
 pair<PlaneWallPoint,PlaneWallPoint> min_max_points(PlaneWall &w, Secs time, EnvMat &envmat){
     PlaneWallPoint p1 = PlaneWallPoint(0, time);
     PlaneWallPoint p2 = PlaneWallPoint(w.length(), time);
@@ -1008,7 +1064,6 @@ pair<PlaneWallPoint,PlaneWallPoint> min_max_points(PlaneWall &w, Secs time, EnvM
     }
 }
 
-//TODO
 pair<InfCylinderPoint,InfCylinderPoint> min_max_points(InfCylinder &icyl, Secs time, EnvMat &envmat){
     InfCylinderPoint p1 = InfCylinderPoint(0, time);
     InfCylinderPoint p2 = InfCylinderPoint(icyl.radius(), time);
@@ -1020,7 +1075,6 @@ pair<InfCylinderPoint,InfCylinderPoint> min_max_points(InfCylinder &icyl, Secs t
     }
 }
 
-//TODO
 pair<RectBarPoint,RectBarPoint> min_max_points(RectBar &rb, Secs time, EnvMat &envmat){
     RectBarPoint p1 = RectBarPoint(0, 0, 0, time);
     RectBarPoint p2 = RectBarPoint(rb.l1(), rb.l2(), rb.l3(), time);
@@ -1032,7 +1086,6 @@ pair<RectBarPoint,RectBarPoint> min_max_points(RectBar &rb, Secs time, EnvMat &e
     }
 }
 
-//TODO
 pair<CylinderPoint,CylinderPoint> min_max_points(Cylinder &cyl, Secs time, EnvMat &envmat){
     CylinderPoint p1 = CylinderPoint(0, 0, time);
     CylinderPoint p2 = CylinderPoint(cyl.radius(), cyl.length(), time);
@@ -1044,7 +1097,6 @@ pair<CylinderPoint,CylinderPoint> min_max_points(Cylinder &cyl, Secs time, EnvMa
     }
 }
 
-//TODO
 pair<InfRectBarPoint,InfRectBarPoint> min_max_points(InfRectBar &irb, Secs time, EnvMat &envmat){
     InfRectBarPoint p1 = InfRectBarPoint(0, 0, time);
     InfRectBarPoint p2 = InfRectBarPoint(irb.l1(), irb.l2(), time);
@@ -1054,4 +1106,44 @@ pair<InfRectBarPoint,InfRectBarPoint> min_max_points(InfRectBar &irb, Secs time,
     } else {
         return make_pair<InfRectBarPoint, InfRectBarPoint>(move(p1), move(p2));
     }
+}
+
+void plot(Sphere &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
+    Gnuplot gp;
+
+    int n = (end - start) / intrv;
+    Secs cur;
+
+    vector<pair<double,double>> avg_temp;
+    vector<pair<double,double>> min_temp;
+    vector<pair<double,double>> max_temp;
+
+
+    cur = start;
+    for (int i=0; i < n; ++i){
+        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+
+        pair<SpherePoint, SpherePoint> min_max = min_max_points(s, cur, envmat);
+        temp_at_point(s, min_max.first, envmat);
+        min_temp.push_back(make_pair(cur, min_max.first.temp()));
+        temp_at_point(s, min_max.second, envmat);
+        max_temp.push_back(make_pair(cur, min_max.second.temp()));
+        cur += intrv;
+    }
+
+    cur = end;
+    avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
+    pair<SpherePoint, SpherePoint> min_max = min_max_points(s, cur, envmat);
+    temp_at_point(s, min_max.first, envmat);
+    min_temp.push_back(make_pair(cur, min_max.first.temp()));
+    temp_at_point(s, min_max.second, envmat);
+    max_temp.push_back(make_pair(cur, min_max.second.temp()));
+
+    gp << "set xrange [-" << start << ":" << end << "]\n";
+    //gp << "plot '-' with linespoints\n";
+    //gp.send1d(avg_temp);
+    gp << "plot '-' with linespoints\n";
+    gp.send1d(min_temp);
+    gp << "plot '-' with linespoints\n";
+    gp.send1d(max_temp);
 }
