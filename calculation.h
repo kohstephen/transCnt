@@ -53,5 +53,4 @@ float kelvin_to_fahrenheit(Kelvin k);
  * Utility function to convert Kelvin to Celcius.
  */
 float kelvin_to_celcius(Kelvin k);
-
 #endif

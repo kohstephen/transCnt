@@ -290,6 +290,7 @@ float theta_at_point(Sphere &s, SpherePoint &p, float h){
         return sphere_one_term_at_time_at_point(fo, bi, r, r0);
     }
 
+
     //Multiple-Term Approximation.
     if(fo > 0.05){
         return sphere_multiple_term_at_time_at_point(fo, bi, r, r0);
