@@ -57,4 +57,3 @@ float kelvin_to_celcius(Kelvin k);
 // Plot
 void plot(Sphere &s, Secs start, Secs end, Secs intrv, EnvMat &envmat);
 #endif
->>>>>>> Stashed changes
