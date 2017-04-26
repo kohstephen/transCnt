@@ -4,12 +4,20 @@
 #include "calculation.h"
 #include <valarray>
 #include "gnuplot-iostream/gnuplot-iostream.h"
+#include <iostream>
+#include <fstream>
+
 
 extern const float PI = 3.14159265;
 //TODO: change "RATIO" to 0.01
 float RATIO = 0.003;
 float PRECESION = 0.001;
 float EPSILON = 0.01;
+
+/** 
+ *  zeros for J0 functions
+ *  stored for numerical calculation of zetas for cylinders
+ */
 vector<float> J0zeros = {0, 2.4048, 5.5201, 8.6537, 11.7915, 14.9309};
 
 float kelvin_to_fahrenheit(Kelvin k){
@@ -20,20 +28,36 @@ float kelvin_to_celcius(Kelvin k){
     return k - 273.15;
 }
 
+/**
+ * Calculate biot number
+ * x is radius r0 for sphere and infinite cylinder
+ * x is length L for plane wall
+ */
 float biot(float h, float k, float x){
     return h*x/k;
 }
 
+/**
+ * Calculate fourier number
+ * x is radius r0 for sphere and infinite cylinder
+ * x is length L for plane wall
+ */
 float fourier(float alpha, float time, float x){
     return alpha*time/(x*x);
 }
 
-
+/**
+ * Calculate temperature from theta and the init and infinite temparature
+ */
 float theta_to_temp(float theta, float t_init, float t_inf){
     return theta*(t_init-t_inf)+t_inf;
 }
 
-// only support n <= 6
+/**
+ * Numerically find the nth positive root of the transcendental equation
+ * for the inifinite cylinder.
+ * Note that 1 <= n <= 6
+ */
 float cylinder_solve_for_zeta(float biot, int n){
     float min = J0zeros[n-1];
     float max = J0zeros[n];
@@ -46,16 +70,20 @@ float cylinder_solve_for_zeta(float biot, int n){
         if(fx<biot) min = x;
         else max = x;
     }
+    //! This line should never be reached
     return -1;
 }
 
+/**
+ * Numerically find the nth positive root of the transcendental equation
+ * for the planewall.
+ * Note that n >= 1
+ */
 float planewall_solve_for_zeta(float biot, int n){
-    // [0, pi/2] [pi*(n-3/2), pi*(n-1/2)]
-    //ζtan(ζ) = Bi
+    //! range: [0, pi/2], [pi*(n-3/2), pi*(n-1/2)]
     float min = n==1? 0:(n-1.5)*PI;
     float max = (n-0.5)*PI;
-    float x;
-    float fx;
+    float x, fx;
     while(true){
         x = (min+max)/2;
         fx = x*tan(x);
@@ -63,19 +91,21 @@ float planewall_solve_for_zeta(float biot, int n){
         if(fx<biot) min = x;
         else max = x;
     }
-    //return 1.142;
+    //! This line should never be reached
     return -1;
 }
 
-//newton-raphson
+/**
+ * Numerically find the nth positive root of the transcendental equation
+ * for the sphere.
+ * Note that n >= 1
+ */
 float sphere_solve_for_zeta(float biot, int n){
-    // [(n-1)*pi, n*pi]
-    //ζcot(ζ) = 1-Bi
+    //! range: [(n-1)*pi, n*pi]
     float rh = 1-biot;
     float min = (n-1)*PI;
     float max = n*PI;
-    float x;
-    float fx;
+    float x, fx;
     while(true){
         x = (min+max)/2;
         fx = x/tan(x);
@@ -83,25 +113,37 @@ float sphere_solve_for_zeta(float biot, int n){
         if(fx<rh) max = x;
         else min = x;
     }
-    //return 1.142;
+    //! This line should never be reached
     return -1;
 }
 
+/**
+ * Lumped Capacitance Approximation for infinite cylinder.
+ */
 float infinitecylinder_lumped_cap_at_time(float r0, float density, float h, float c, float time){
     float theta = exp(-h*2*time/(density*r0*c));
     return theta;
 }
 
+/**
+ * Lumped Capacitance Approximation for planewall.
+ */
 float planewall_lumped_cap_at_time(float L, float density, float h, float c, float time){
     float theta = exp(-h*time/(density*L*c));
     return theta;
 }
 
+/**
+ * Lumped Capacitance Approximation for sphere.
+ */
 float sphere_lumped_cap_at_time(float r0, float density, float h, float c, float time){
     float theta = exp(-h*3*time/(density*r0*c));
     return theta;
 }
 
+/**
+ * One-Term Approximation for infinite cylinder.
+ */
 float infinitecylinder_one_term_at_time_at_point(float fourier, float biot, float r, float r0){
     float zeta = cylinder_solve_for_zeta(biot,1);
     float j0 = std::tr1::cyl_bessel_j(0,zeta);
@@ -111,6 +153,9 @@ float infinitecylinder_one_term_at_time_at_point(float fourier, float biot, floa
     return theta;
 }
 
+/**
+ * One-Term Approximation for planewall.
+ */
 float planewall_one_term_at_time_at_point(float fourier, float biot, float x, float L){
     float zeta = planewall_solve_for_zeta(biot,1);
     float c1 = 4.0f*sin(zeta)/(2.0f*zeta+sin(2.0f*zeta));
@@ -118,14 +163,20 @@ float planewall_one_term_at_time_at_point(float fourier, float biot, float x, fl
     return theta;
 }
 
+/**
+ * One-Term Approximation for sphere.
+ */
 float sphere_one_term_at_time_at_point(float fourier, float biot, float r, float r0){
-    float zeta = sphere_solve_for_zeta(biot,1); //can we solve this directly? (biot number)
+    float zeta = sphere_solve_for_zeta(biot,1); 
     float c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
     float temp = zeta*r/r0;
     float theta = c1*exp(-zeta*zeta*fourier)*(1/temp)*sin(temp);
     return theta;
 }
 
+/**
+ * Multiple-Term Approximation for infinite cylinder.
+ */
 float infinitecylinder_multiple_term_at_time_at_point(float fourier, float biot, float r, float r0){
     float theta = 0;
     int n = 1;
@@ -149,6 +200,9 @@ float infinitecylinder_multiple_term_at_time_at_point(float fourier, float biot,
     return theta;
 }
 
+/**
+ * Multiple-Term Approximation for planewall.
+ */
 float planewall_multiple_term_at_time_at_point(float fourier, float biot, float x, float L){
     float theta = 0;
     int n = 1;
@@ -170,6 +224,9 @@ float planewall_multiple_term_at_time_at_point(float fourier, float biot, float 
     return theta;
 }
 
+/**
+ * Multiple-Term Approximation for sphere.
+ */
 float sphere_multiple_term_at_time_at_point(float fourier, float biot, float r, float r0){
     // std::cout << biot << std::endl;
     float theta = 0;
@@ -196,84 +253,21 @@ float sphere_multiple_term_at_time_at_point(float fourier, float biot, float r, 
 }
 
 /**
-  void sphere_one_term_at_time(vector<float>* ret, float fourier, float biot, vector<float>& points, float r0, float t_init, float t_inf){
-  float zeta; //can we solve this directly?
-  float c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
-  float y = c1*exp(-zeta*zeta*fourier);
-  float z = zeta/r0;
-  float diff = t_init-t_inf;
-  int i = 0;
-  for(auto it = points.begin(); it != points.end(); ++it, ++i){
-  float q = z*(*it);
-  float theta = y*(1/q)*sin(q);
-  (*ret)[i] = theta*diff+t_inf;
-  }
-  }
- **/
-
+ * Semi-Infinite Approximation
+ * x is the distance from the surface of the object 
+ * to the point in consideration
+ */
 float semi_infinite_at_time_at_point(float x, float alpha, float time, float h, float k){
     float y = sqrt(alpha*time);
     float z = x/(2*y);
     float theta = erfc(z) - exp(h*x/k + h*h*alpha*time/(k*k))*erfc(z+h*y/k);
     return 1 - theta;
 }
-
-/**
-  vector<float> semi_infinite_at_time(vector<float>* ret, vector<float>& points, float alpha, float time, float h, float k, float t_init, float t_inf){
-  float y = sqrt(alpha*time);
-  float z = h*h*alpha*time/(k*k);
-  float diff = t_init-t_inf;
-  int i = 0;
-  for(auto it = points.begin(); it != points.end(); ++it, ++i){
-  float x = *it;
-  float q = x/(2*y);
-  float theta = erfc(q) - exp(h*x/k + z)*erfc(q+h*y/k);
-  (*ret)[i] = theta*diff+t_inf;
-  }
-  }
- **/
-
-/**
-  void temp_at_time(vector<float>* ret, Sphere s, string mat, string envmat, vector<float>& points, float time, float t_init, float t_inf){
-  float r0 = s.getRadius();
-
-//heat transfer coefficient (units: W/m^2K)
-float h = get_h(envmat);
-//conduction coefficient (units: W/mK)
-float k = get_k(mat, t_init);
-float bi = biot(h, k, r0);
-//Lumped Capacitance. Use this when Bi < 0.1
-// saved data
-float density = get_density(mat);
-float c = get_c(mat, t_init);
-if(bi<0.1){
-float temp =  sphere_lumped_cap_at_time(s, density, h, c, time, t_init, t_inf);
-for(int i = 0; i < points.size(); i++){
-(*ret)[i] = temp;
-}
-return;
-}
-
-//thermal diffusivity (units: m^2/s)
-float alpha = calculate_alpha(k, density, c);
-float fo = fourier(alpha, time, r0);
-//One-Term Approximation. Use this when Fo > 0.2
-if(fo > 0.2){
-sphere_one_term_at_time(ret, fo, bi, points, r0, t_init, t_inf);
-return;
-}
-
-//Saved data.
-if(fo > 0.05){
-
-}
-
-//semi-infinite approximation
-semi_infinite_at_time(ret, points, alpha, time, h, k, t_init, t_inf);
-
-}
- **/
  
+/**
+ * Calculate theta at a particular point for sphere.
+ * To get temperature, use the theta_to_temp function.
+ */
 float theta_at_point(Sphere &s, SpherePoint &p, float h){
     float r0 = s.radius();
     Loc r = p.sphere_loc();
@@ -302,10 +296,13 @@ float theta_at_point(Sphere &s, SpherePoint &p, float h){
     }
 
     //semi-infinite approximation
-
     return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k); 
 }
 
+/**
+ * Calculate theta at a particular point for planewall.
+ * To get temperature, use the theta_to_temp function.
+ */
 float theta_at_point(PlaneWall &w, PlaneWallPoint &p, float h){
     float L = w.length();
     Loc x = p.rect_loc();
@@ -335,6 +332,10 @@ float theta_at_point(PlaneWall &w, PlaneWallPoint &p, float h){
     return semi_infinite_at_time_at_point(L-x, alpha, time, h, k);
 }
 
+/**
+ * Calculate theta at a particular point for infinite cylinder.
+ * To get temperature, use the theta_to_temp function.
+ */
 float theta_at_point(InfCylinder &icyl, InfCylinderPoint &p, float h){
     float r0 = icyl.radius();
     Loc r = p.cyl_loc();
@@ -361,9 +362,9 @@ float theta_at_point(InfCylinder &icyl, InfCylinderPoint &p, float h){
     }
 
     //semi-infinite approximation
-
     return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k);
 }
+
 
 void temp_at_point(Sphere &s, SpherePoint &p, EnvMat &envmat){
     p.temp(theta_to_temp(theta_at_point(s, p, envmat.h()), s.t_init(), envmat.t_inf()));
@@ -441,19 +442,23 @@ void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, EnvMat &envmat){
     p.temp(theta_to_temp(theta1*theta2, t_init, envmat.t_inf()));
 }
 
+valarray<Kelvin> theta_to_temp(valarray<float> theta, float t_init, float t_inf){
+    return theta*(t_init-t_inf)+t_inf;
+}
+
 valarray<float> lumped_cap_on_mesh(PlaneWall &w, EnvMat &envmat, valarray<Loc> locs, Secs secs) {
     valarray<float> theta (exp(-1 * envmat.h()*secs/(w.p()*w.length()*w.c())), locs.size());
     return theta;
 }
 
-valarray<float> one_term_at_time_on_mesh(float fo, float bi, valarray<float> locs, Dim L) {
+valarray<float> planewall_one_term_at_time_on_mesh(float fo, float bi, valarray<float> locs, Dim L) {
     float zeta = planewall_solve_for_zeta(bi, 1);
     float c1 = 4.0f*sin(zeta)/(2.0f*zeta+sin(2.0f*zeta));
     valarray<float> theta = c1*exp(-zeta*zeta*fo)*cos(zeta*locs/L);      
     return theta;
 }
 
-valarray<float> multiple_term_at_time_on_mesh(float fo, float bi, valarray<float> locs, Dim L) {
+valarray<float> planewall_multiple_term_at_time_on_mesh(float fo, float bi, valarray<float> locs, Dim L) {
     valarray<float> theta (locs.size());
     int n = 1;
     float zeta_n, zeta_n_1, c_n, c_n_1;
@@ -486,15 +491,13 @@ valarray<float> semi_infinite_at_time_on_mesh(valarray<float> x, float alpha, fl
     return ones - theta;
 }
 
-valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat) {
+valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int num_points, EnvMat &envmat, valarray<Loc> & locs) {
     // temp_dist(w, num_points, secs);
-    int num_points = mesh_density + 1; 
     float L = w.length();
     float k = w.k();
     float h = envmat.h();
     float bi = biot(h, k, L);
-    valarray<Loc> locs (num_points);  
-    float incr = w.length() / mesh_density; 
+    float incr = w.length() / (num_points - 1); 
     // vector<PlaneWallPoint> temp_dist;
     for (int i = 0; i < num_points; i++) {
         locs[i] = i*incr;	
@@ -509,13 +512,13 @@ valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat 
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
         // cout << "ONE-TERM" << endl;
-        return one_term_at_time_on_mesh(fo, bi, locs, w.length());
+        return planewall_one_term_at_time_on_mesh(fo, bi, locs, w.length());
     }
 
     //Multiple-Term Approximation.
     if(fo > 0.05){
         // cout << "MULTI-TERM" << endl;
-        return multiple_term_at_time_on_mesh(fo, bi, locs, w.length());
+        return planewall_multiple_term_at_time_on_mesh(fo, bi, locs, w.length());
     }
 
     //semi-infinite approximation
@@ -525,16 +528,260 @@ valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat 
     return semi_infinite_at_time_on_mesh(x, alpha, secs, h, k);
 }
 
-valarray<Kelvin> theta_to_temp(valarray<float> theta, float t_init, float t_inf){
-    return theta*(t_init-t_inf)+t_inf;
+void output_csv(vector<PlaneWallPoint> &pts, Secs secs) {
+    ofstream myfile;
+    myfile.open ("pw.csv");
+    for (auto it = pts.begin(); it != pts.end(); it++) {
+        myfile << (*it).rect_loc() << "," << (*it).temp() << "\n"; 
+    }
+    myfile.close();
 }
 
 void temp_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat){
-    valarray<Kelvin> temps = theta_to_temp(theta_on_mesh(w, secs, mesh_density, envmat), w.t_init(), envmat.t_inf());  
+    int num_points = mesh_density + 1; 
+    valarray<Loc> locs (num_points);   
+    valarray<Kelvin> temps = theta_to_temp(theta_on_mesh(w, secs, num_points, envmat, locs), w.t_init(), envmat.t_inf());  
+    /* 
     for (Kelvin i : temps) {
         cout << i << ' ';
     }
+    */
+    vector<PlaneWallPoint> temp_dist; 
+    for (int i = 0; i < num_points; i++) {
+        temp_dist.push_back(PlaneWallPoint(locs[i], secs));
+        temp_dist[i].temp(temps[i]); 
+    }    
+    w.temp_dist(temp_dist); 
+    output_csv(w.temp_dist(), secs);
 }
+
+
+valarray<float> lumped_cap_on_mesh(InfCylinder &icyl, EnvMat &envmat, valarray<Loc> locs, Secs secs) {
+    valarray<float> theta (exp(-1 * 2 *envmat.h()*secs/(icyl.p()*icyl.radius()*icyl.c())), locs.size());
+    return theta;
+}
+
+valarray<float> infinitecylinder_one_term_at_time_on_mesh(float fourier, float biot, valarray<float> r, float r0){
+    float zeta = cylinder_solve_for_zeta(biot,1);
+    float j0 = std::tr1::cyl_bessel_j(0,zeta);
+    float j1 = std::tr1::cyl_bessel_j(1,zeta);
+    float c1 = 2*j1/(zeta*(j0*j0+j1*j1));
+    valarray<float> bessels (r.size());
+    for (int i = 0; i < bessels.size(); i++) {
+        bessels[i] = std::tr1::cyl_bessel_j(0,zeta*r[i]/r0);
+    }
+    valarray<float> theta (c1*exp(-zeta*zeta*fourier)*bessels);
+    return theta;
+}
+
+valarray<float> infinitecylinder_multiple_term_at_time_on_mesh(float fourier, float biot, valarray<float> r, float r0){
+    valarray<float> theta (r.size());
+    int n = 1;
+    float zeta_n, zeta_n_1, j0, j1, c_n, c_n_1;
+    while(true){
+        if(n>1){
+            zeta_n_1 = zeta_n;
+            c_n_1 = c_n;
+        }
+        zeta_n = cylinder_solve_for_zeta(biot, n);
+        j0 = std::tr1::cyl_bessel_j(0,zeta_n);
+        j1 = std::tr1::cyl_bessel_j(1,zeta_n);
+        c_n = 2*j1/(zeta_n*(j0*j0+j1*j1));
+        if(n>1){
+            float ratio = abs(c_n*exp(-zeta_n*zeta_n*fourier)/(c_n_1*exp(-zeta_n_1*zeta_n_1*fourier)));
+            if(ratio < RATIO) break;
+        }
+        valarray<float> bessels (r.size());
+        for (int i = 0; i < bessels.size(); i++) {
+            bessels[i] = std::tr1::cyl_bessel_j(0,zeta_n*r[i]/r0);
+        }
+        theta += c_n*exp(-zeta_n*zeta_n*fourier)*bessels;
+        n += 1;
+    }
+    return theta;
+}
+
+valarray<float> theta_on_mesh(InfCylinder &icyl, Secs secs, int num_points, EnvMat &envmat, valarray<Loc> & locs) {
+    // temp_dist(w, num_points, secs);
+    Dim r0 = icyl.radius();
+    float k = icyl.k();
+    float h = envmat.h();
+    float bi = biot(h, k, r0);
+    float incr = r0 / (num_points - 1); 
+    // vector<PlaneWallPoint> temp_dist;
+    for (int i = 0; i < num_points; i++) {
+        locs[i] = i*incr;	
+    }
+    if(bi<0.1){
+        //cout << "LUMPED" << endl;
+        return lumped_cap_on_mesh(icyl, envmat, locs, secs);
+    }
+
+    float alpha = icyl.a();
+    float fo = fourier(alpha, secs, r0);
+    //One-Term Approximation. Use this when Fo > 0.2
+    if(fo > 0.2){
+        //cout << "ONE-TERM" << endl;
+        return infinitecylinder_one_term_at_time_on_mesh(fo, bi, locs, r0);
+    }
+
+    //Multiple-Term Approximation.
+    if(fo > 0.05){
+        //cout << "MULTI-TERM" << endl;
+        return infinitecylinder_multiple_term_at_time_on_mesh(fo, bi, locs, r0);
+    }
+
+    //semi-infinite approximation
+    //cout << "SEMI-INF" << endl;
+    valarray<Dim> Rs (r0, locs.size());
+    valarray<float> x = Rs - locs;
+    return semi_infinite_at_time_on_mesh(x, alpha, secs, h, k);
+}
+
+
+void output_csv(vector<InfCylinderPoint> &pts, Secs secs) {
+    ofstream myfile;
+    myfile.open ("icyl.csv");
+    for (auto it = pts.begin(); it != pts.end(); it++) {
+        myfile << (*it).cyl_loc() << "," << (*it).temp() << "\n"; 
+    }
+    myfile.close();
+}
+
+void temp_on_mesh(InfCylinder &icyl, Secs secs, int mesh_density, EnvMat &envmat){
+    int num_points = mesh_density + 1; 
+    valarray<Loc> locs (num_points);   
+    valarray<Kelvin> temps = theta_to_temp(theta_on_mesh(icyl, secs, num_points, envmat, locs), icyl.t_init(), envmat.t_inf());  
+    /*
+    for (Kelvin i : temps) {
+        cout << i << ' ';
+    }
+    */ 
+    
+    vector<InfCylinderPoint> temp_dist; 
+    for (int i = 0; i < num_points; i++) {
+        temp_dist.push_back(InfCylinderPoint(locs[i], secs));
+        temp_dist[i].temp(temps[i]); 
+    }    
+    icyl.temp_dist(temp_dist); 
+    output_csv(icyl.temp_dist(), secs);
+}
+
+
+valarray<float> lumped_cap_on_mesh(Sphere &s, EnvMat &envmat, valarray<Loc> locs, Secs secs) {
+    valarray<float> theta (exp(-1 * 3 *envmat.h()*secs/(s.p()*s.radius()*s.c())), locs.size());
+    return theta;
+}
+
+valarray<float> sphere_one_term_at_time_on_mesh(float fourier, float biot, valarray<float> r, float r0){
+    float zeta = sphere_solve_for_zeta(biot,1); 
+    float c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
+    valarray<float> y (zeta*r/r0);
+    valarray<float> ones (1, r.size());
+    valarray<float> theta (c1*exp(-zeta*zeta*fourier)*(ones/y)*sin(y));
+    theta[0] = c1 * exp(-zeta*zeta*fourier);  
+    return theta;
+}
+
+valarray<float> sphere_multiple_term_at_time_on_mesh(float fourier, float biot, valarray<float> r, float r0){
+    valarray<float> theta (r.size());
+    int n = 1;
+    float zeta_n, zeta_n_1, c_n, c_n_1;
+    while(true){
+        if(n>1){
+            zeta_n_1 = zeta_n;
+            c_n_1 = c_n;
+        }
+        zeta_n = sphere_solve_for_zeta(biot, n);
+        c_n = 4.0f*(sin(zeta_n)-zeta_n*cos(zeta_n))/(2.0f*zeta_n-sin(2.0f*zeta_n));
+        if(n>1){
+            float ratio = abs(c_n*exp(-zeta_n*zeta_n*fourier)/(c_n_1*exp(-zeta_n_1*zeta_n_1*fourier)));
+            if(ratio < RATIO) break;
+        }
+        valarray<float> y = zeta_n*r/r0;
+        valarray<float> ones (1, r.size());
+       
+        /* 
+        valarray<float> debug (ones/y);
+        for (int i = 0; i < debug.size(); i++) {
+            cout << debug[i] << " ";
+        }
+        */
+        theta += c_n*exp(-zeta_n*zeta_n*fourier)*(ones/y)*sin(y);
+        theta[0] = c_n*exp(-zeta_n*zeta_n*fourier);  
+        n += 1;
+    }
+    return theta;
+}
+
+valarray<float> theta_on_mesh(Sphere &s, Secs secs, int num_points, EnvMat &envmat, valarray<Loc> & locs) {
+    // temp_dist(w, num_points, secs);
+    Dim r0 = s.radius();
+    float k = s.k();
+    float h = envmat.h();
+    float bi = biot(h, k, r0);
+    float incr = r0 / (num_points - 1); 
+    // vector<PlaneWallPoint> temp_dist;
+    for (int i = 0; i < num_points; i++) {
+        locs[i] = i*incr;	
+    }
+    if(bi<0.1){
+        // cout << "LUMPED" << endl;
+        return lumped_cap_on_mesh(s, envmat, locs, secs);
+    }
+
+    float alpha = s.a();
+    float fo = fourier(alpha, secs, r0);
+    //One-Term Approximation. Use this when Fo > 0.2
+    if(fo > 0.2){
+        // cout << "ONE-TERM" << endl;
+        return sphere_one_term_at_time_on_mesh(fo, bi, locs, r0);
+    }
+
+    //Multiple-Term Approximation.
+    if(fo > 0.05){
+        // cout << "MULTI-TERM" << endl;
+        return sphere_multiple_term_at_time_on_mesh(fo, bi, locs, r0);
+    }
+
+    //semi-infinite approximation
+    valarray<Dim> Rs (r0, locs.size());
+    valarray<float> x = Rs - locs;
+    return semi_infinite_at_time_on_mesh(x, alpha, secs, h, k);
+}
+
+
+void output_csv(vector<SpherePoint> &pts, Secs secs) {
+    ofstream myfile;
+    myfile.open ("sphere.csv");
+    cout << pts.size() << endl;
+    for (auto it = pts.begin(); it != pts.end(); it++) {
+        myfile << (*it).sphere_loc() << "," << (*it).temp() << "\n"; 
+    }
+    myfile.close();
+}
+
+void temp_on_mesh(Sphere &s, Secs secs, int mesh_density, EnvMat &envmat){
+    int num_points = mesh_density + 1; 
+    valarray<Loc> locs (num_points);   
+    valarray<Kelvin> temps = theta_to_temp(theta_on_mesh(s, secs, num_points, envmat, locs), s.t_init(), envmat.t_inf());  
+    /*
+    for (Kelvin i : temps) {
+        cout << i << ' ';
+    }
+    */ 
+    
+    vector<SpherePoint> temp_dist; 
+    for (int i = 0; i < num_points; i++) {
+        temp_dist.push_back(SpherePoint(locs[i], secs));
+        temp_dist[i].temp(temps[i]); 
+    }    
+    s.temp_dist(temp_dist); 
+    output_csv(s.temp_dist(), secs);
+}
+
+
+
 
 float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat){
     float r0 = s.radius();

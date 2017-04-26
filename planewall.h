@@ -15,6 +15,7 @@ public:
 	~PlaneWall();
 	Dim length();
 	void temp_dist(vector<PlaneWallPoint> &temp_dist); 
+	vector<PlaneWallPoint> &temp_dist(); 
 };
 
 #endif

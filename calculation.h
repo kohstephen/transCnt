@@ -41,7 +41,9 @@ void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, EnvMat &envmat);
 
 void temp_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat); 
 
+void temp_on_mesh(InfCylinder &icyl, Secs secs, int mesh_density, EnvMat &envmat); 
 
+void temp_on_mesh(Sphere &s, Secs secs, int mesh_density, EnvMat &envmat); 
 /**
  * Utility function to convert Kelvin to Fahrenheit.
  */

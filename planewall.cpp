@@ -23,3 +23,7 @@ Dim PlaneWall::length(){
 void PlaneWall::temp_dist(vector<PlaneWallPoint> &temp_dist) {
    _temp_dist = temp_dist; 
 }
+
+vector<PlaneWallPoint> &PlaneWall::temp_dist() {
+	return _temp_dist;
+}
