@@ -169,8 +169,13 @@ float planewall_one_term_at_time_at_point(float fourier, float biot, float x, fl
 float sphere_one_term_at_time_at_point(float fourier, float biot, float r, float r0){
     float zeta = sphere_solve_for_zeta(biot,1); 
     float c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
-    float temp = zeta*r/r0;
-    float theta = c1*exp(-zeta*zeta*fourier)*(1/temp)*sin(temp);
+    float y = zeta*r/r0;
+    float theta; 
+    if (r == 0) {
+        theta = c1*exp(-zeta*zeta*fourier);
+    } else {
+        theta = c1*exp(-zeta*zeta*fourier)*(1/y)*sin(y);
+    }
     return theta;
 }
 
@@ -245,8 +250,13 @@ float sphere_multiple_term_at_time_at_point(float fourier, float biot, float r, 
             float ratio = abs(c_n*exp(-zeta_n*zeta_n*fourier)/(c_n_1*exp(-zeta_n_1*zeta_n_1*fourier)));
             if(ratio < RATIO) break;
         }
-        float temp = zeta_n*r/r0;
-        theta += c_n*exp(-zeta_n*zeta_n*fourier)*(1/temp)*sin(temp);
+        float y = zeta_n*r/r0;
+        float theta;
+        if (r == 0) {
+            theta += c_n*exp(-zeta_n*zeta_n*fourier);    
+        } else { 
+            theta += c_n*exp(-zeta_n*zeta_n*fourier)*(1/y)*sin(y);
+        }
         n += 1;
     }
     return theta;
@@ -260,7 +270,12 @@ float sphere_multiple_term_at_time_at_point(float fourier, float biot, float r, 
 float semi_infinite_at_time_at_point(float x, float alpha, float time, float h, float k){
     float y = sqrt(alpha*time);
     float z = x/(2*y);
-    float theta = erfc(z) - exp(h*x/k + h*h*alpha*time/(k*k))*erfc(z+h*y/k);
+    float theta;
+    if (y == 0) { 
+        theta = 0;
+    } else {
+        theta = erfc(z) - exp(h*x/k + h*h*alpha*time/(k*k))*erfc(z+h*y/k);
+    }
     return 1 - theta;
 }
  
@@ -542,8 +557,11 @@ valarray<float> semi_infinite_at_time_on_mesh(valarray<float> x, float alpha, fl
     valarray<float> z (x/(2*y));
     // not allowed to do erfc on valarrays -- have to iterate over each element in valarray
     valarray<float> theta (x.size());
-    for (int i = 0; i < theta.size(); i++) { 
-        theta[i] = erfc(z[i]) - exp(h*x[i]/k + h*h*alpha*time/(k*k))*erfc(z[i]+h*y/k);
+    // erfc(infty) = 0, but gives error  
+    if (y != 0) { 
+        for (int i = 0; i < theta.size(); i++) { 
+            theta[i] = erfc(z[i]) - exp(h*x[i]/k + h*h*alpha*time/(k*k))*erfc(z[i]+h*y/k);
+        }
     }
     valarray<float> ones (1, x.size());
     return ones - theta;
