@@ -42,7 +42,6 @@ float biot(float h, float k, float x){
  * x is length L for plane wall
  */
 float fourier(float alpha, float time, float x){
-    cout << "alpha" << alpha << endl;
     return alpha*time/(x*x);
 }
 
@@ -50,7 +49,6 @@ float fourier(float alpha, float time, float x){
  * Calculate temperature from theta and the init and infinite temparature
  */
 float theta_to_temp(float theta, float t_init, float t_inf){
-    cout << "theta is " << theta << endl;
     return theta*(t_init-t_inf)+t_inf;
 }
 
@@ -275,7 +273,6 @@ float semi_infinite_at_time_at_point(float x, float alpha, float time, float h, 
         theta = erfc(z) - exp(h*x/k + h*h*alpha*time/(k*k))*erfc(z+h*y/k);
         if (errno == ERANGE)
            theta = erfc(z);
-        cout << "now theta is " << theta << endl;
     } else {
         theta = 0;
     }
@@ -299,7 +296,6 @@ float theta_at_point(Sphere &s, SpherePoint &p, float h){
     //Lumped Capacitance. Use this when Bi < 0.1
     if(bi<0.1){
         s.method(0);
-        cout << "method 0" << endl;
         return sphere_lumped_cap_at_time(r0, density, h, c, time);
     }
 
@@ -309,7 +305,6 @@ float theta_at_point(Sphere &s, SpherePoint &p, float h){
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
         s.method(1);
-        cout << "method 1" << endl;
         return sphere_one_term_at_time_at_point(fo, bi, r, r0);
     }
 
@@ -317,13 +312,11 @@ float theta_at_point(Sphere &s, SpherePoint &p, float h){
     //Multiple-Term Approximation.
     if(fo > 0.05){
         s.method(2);
-        cout << "method 2" << endl;
         return sphere_multiple_term_at_time_at_point(fo, bi, r, r0);
     }
 
     //semi-infinite approximation
     s.method(3);
-    cout << "method 3" << endl;
     return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k); 
 }
 
@@ -387,7 +380,6 @@ float theta_at_point(InfCylinder &icyl, InfCylinderPoint &p, float h){
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
         icyl.method(1);
-        cout << "1" << endl;
         return infinitecylinder_one_term_at_time_at_point(fo, bi, r, r0);
     }
 
@@ -543,7 +535,6 @@ valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int num_points, EnvMat &e
         locs[i] = i*incr;	
     }
     if(bi<0.1){
-        // cout << "LUMPED" << endl;
         return lumped_cap_on_mesh(w, envmat, locs, secs);
     }
 
@@ -551,18 +542,15 @@ valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int num_points, EnvMat &e
     float fo = fourier(alpha, secs, L);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
-        // cout << "ONE-TERM" << endl;
         return planewall_one_term_at_time_on_mesh(fo, bi, locs, w.length());
     }
 
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        // cout << "MULTI-TERM" << endl;
         return planewall_multiple_term_at_time_on_mesh(fo, bi, locs, w.length());
     }
 
     //semi-infinite approximation
-    // cout << "SEMI-INF" << endl;
     valarray<Dim> Ls (L, locs.size());
     valarray<float> x = Ls - locs;
     return semi_infinite_at_time_on_mesh(x, alpha, secs, h, k);
@@ -584,7 +572,6 @@ void temp_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat){
     valarray<Kelvin> temps = theta_to_temp(theta_on_mesh(w, secs, num_points, envmat, locs), w.t_init(), envmat.t_inf());  
     /* 
     for (Kelvin i : temps) {
-        cout << i << ' ';
     }
     */
     vector<PlaneWallPoint> temp_dist; 
@@ -656,7 +643,6 @@ valarray<float> theta_on_mesh(InfCylinder &icyl, Secs secs, int num_points, EnvM
         locs[i] = i*incr;	
     }
     if(bi<0.1){
-        //cout << "LUMPED" << endl;
         return lumped_cap_on_mesh(icyl, envmat, locs, secs);
     }
 
@@ -664,18 +650,15 @@ valarray<float> theta_on_mesh(InfCylinder &icyl, Secs secs, int num_points, EnvM
     float fo = fourier(alpha, secs, r0);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
-        //cout << "ONE-TERM" << endl;
         return infinitecylinder_one_term_at_time_on_mesh(fo, bi, locs, r0);
     }
 
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        //cout << "MULTI-TERM" << endl;
         return infinitecylinder_multiple_term_at_time_on_mesh(fo, bi, locs, r0);
     }
 
     //semi-infinite approximation
-    //cout << "SEMI-INF" << endl;
     valarray<Dim> Rs (r0, locs.size());
     valarray<float> x = Rs - locs;
     return semi_infinite_at_time_on_mesh(x, alpha, secs, h, k);
@@ -698,7 +681,6 @@ void temp_on_mesh(InfCylinder &icyl, Secs secs, int mesh_density, EnvMat &envmat
     valarray<Kelvin> temps = theta_to_temp(theta_on_mesh(icyl, secs, num_points, envmat, locs), icyl.t_init(), envmat.t_inf());  
     /*
     for (Kelvin i : temps) {
-        cout << i << ' ';
     }
     */ 
     
@@ -748,7 +730,6 @@ valarray<float> sphere_multiple_term_at_time_on_mesh(float fourier, float biot, 
         /* 
         valarray<float> debug (ones/y);
         for (int i = 0; i < debug.size(); i++) {
-            cout << debug[i] << " ";
         }
         */
         theta += c_n*exp(-zeta_n*zeta_n*fourier)*(ones/y)*sin(y);
@@ -770,7 +751,6 @@ valarray<float> theta_on_mesh(Sphere &s, Secs secs, int num_points, EnvMat &envm
         locs[i] = i*incr;	
     }
     if(bi<0.1){
-        // cout << "LUMPED" << endl;
         return lumped_cap_on_mesh(s, envmat, locs, secs);
     }
 
@@ -778,13 +758,11 @@ valarray<float> theta_on_mesh(Sphere &s, Secs secs, int num_points, EnvMat &envm
     float fo = fourier(alpha, secs, r0);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
-        // cout << "ONE-TERM" << endl;
         return sphere_one_term_at_time_on_mesh(fo, bi, locs, r0);
     }
 
     //Multiple-Term Approximation.
     if(fo > 0.05){
-        // cout << "MULTI-TERM" << endl;
         return sphere_multiple_term_at_time_on_mesh(fo, bi, locs, r0);
     }
 
@@ -811,7 +789,6 @@ void temp_on_mesh(Sphere &s, Secs secs, int mesh_density, EnvMat &envmat){
     valarray<Kelvin> temps = theta_to_temp(theta_on_mesh(s, secs, num_points, envmat, locs), s.t_init(), envmat.t_inf());  
     /*
     for (Kelvin i : temps) {
-        cout << i << ' ';
     }
     */ 
     
@@ -864,17 +841,12 @@ void temp_on_mesh(InfRectBar &irb, Secs secs, int mesh_density, EnvMat &envmat){
     /* 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-           cout << prod[i*cols + j] << " "; 
         }
-        cout << endl;
     }
-    cout << endl;
      
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            cout << temps[i*cols + j] << " ";        
         }
-        cout << endl;
     }
     */
     
@@ -929,17 +901,12 @@ void temp_on_mesh(Cylinder &cyl, Secs secs, int mesh_density, EnvMat &envmat){
     /*
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-           cout << prod[i*cols + j] << " "; 
         }
-        cout << endl;
     }
-    cout << endl;
      
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            cout << temps[i*cols + j] << " ";        
         }
-        cout << endl;
     }
     */ 
         
@@ -966,7 +933,6 @@ void output_csv(vector<RectBarPoint> &pts, Secs secs) {
 
 void temp_on_mesh(RectBar &rb, Secs secs, int mesh_density, EnvMat &envmat){
     int num_points = mesh_density + 1; 
-    // cout << num_points * num_points * num_points << endl;
     valarray<Loc> locs1 (num_points);   
     valarray<Loc> locs2 (num_points);   
     valarray<Loc> locs3 (num_points);   
@@ -1001,17 +967,12 @@ void temp_on_mesh(RectBar &rb, Secs secs, int mesh_density, EnvMat &envmat){
     /* 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-           cout << prod[i*cols + j] << " "; 
         }
-        cout << endl;
     }
-    cout << endl;
      
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            cout << temps[i*cols + j] << " ";        
         }
-        cout << endl;
     }
     */
     
@@ -1316,7 +1277,6 @@ void plot(Sphere &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     for (int i=0; i < n; ++i){
         auto min_max = min_max_points(s, cur, envmat);
         avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
-        cout << theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf());
 
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
@@ -1326,10 +1286,7 @@ void plot(Sphere &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
             gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
             method = s.method();
         }
-
         cur += intrv;
-
-        cout << " min " << min_max.first.temp() << " max " << min_max.second.temp() << endl;
     }
 
     cur = end;
@@ -1368,7 +1325,6 @@ void plot(PlaneWall &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     for (int i=0; i < n; ++i){
         auto min_max = min_max_points(s, cur, envmat);
         avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
-        cout << theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf());
 
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
@@ -1378,10 +1334,7 @@ void plot(PlaneWall &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
             gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
             method = s.method();
         }
-
         cur += intrv;
-
-        cout << " min " << min_max.first.temp() << " max " << min_max.second.temp() << endl;
     }
 
     cur = end;
@@ -1420,7 +1373,6 @@ void plot(InfCylinder &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     for (int i=0; i < n; ++i){
         auto min_max = min_max_points(s, cur, envmat);
         avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
-        cout << theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf());
 
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
@@ -1430,10 +1382,7 @@ void plot(InfCylinder &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
             gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
             method = s.method();
         }
-
         cur += intrv;
-
-        cout << " min " << min_max.first.temp() << " max " << min_max.second.temp() << endl;
     }
 
     cur = end;
@@ -1472,7 +1421,6 @@ void plot(InfRectBar &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     for (int i=0; i < n; ++i){
         auto min_max = min_max_points(s, cur, envmat);
         avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
-        cout << theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf());
 
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
@@ -1482,10 +1430,7 @@ void plot(InfRectBar &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
             gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
             method = s.method();
         }
-
         cur += intrv;
-
-        cout << " min " << min_max.first.temp() << " max " << min_max.second.temp() << endl;
     }
 
     cur = end;
@@ -1524,7 +1469,6 @@ void plot(Cylinder &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     for (int i=0; i < n; ++i){
         auto min_max = min_max_points(s, cur, envmat);
         avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
-        cout << theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf());
 
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
@@ -1537,7 +1481,6 @@ void plot(Cylinder &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
 
         cur += intrv;
 
-        cout << " min " << min_max.first.temp() << " max " << min_max.second.temp() << endl;
     }
 
     cur = end;
@@ -1576,7 +1519,6 @@ void plot(RectBar &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     for (int i=0; i < n; ++i){
         auto min_max = min_max_points(s, cur, envmat);
         avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
-        cout << theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf());
 
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
@@ -1586,10 +1528,7 @@ void plot(RectBar &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
             gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
             method = s.method();
         }
-
         cur += intrv;
-
-        cout << " min " << min_max.first.temp() << " max " << min_max.second.temp() << endl;
     }
 
     cur = end;
@@ -1626,7 +1565,6 @@ void plot(Sphere &s, vector<SpherePoint> &p, Secs start, Secs end, Secs intrv, E
     for (int i=0; i < n; ++i){
 
         if (method != s.method()) {
-            cout << "CHANGED" << endl;
             gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
             method = s.method();
         }
@@ -1635,9 +1573,6 @@ void plot(Sphere &s, vector<SpherePoint> &p, Secs start, Secs end, Secs intrv, E
             p[j].time(cur);
             temp_at_point(s, p[j], envmat);
             all_temp[j].push_back(make_pair(cur, p[j].temp()));
-            cout << p[j].temp() << endl;
-            cout << "cur is" << all_temp[j][i].first << endl;
-            cout << "temp is" << all_temp[j][i].second << endl;
         }
         cur += intrv;
     }
@@ -1647,7 +1582,6 @@ void plot(Sphere &s, vector<SpherePoint> &p, Secs start, Secs end, Secs intrv, E
         p[j].time(cur);
         temp_at_point(s, p[j], envmat);
         all_temp[j].push_back(make_pair(cur, p[j].temp()));
-        cout << p[j].temp() << endl;
     }
 
     gp << "set title 'Temperature vs Time'\n";
@@ -1686,7 +1620,6 @@ void plot(PlaneWall &s, vector<PlaneWallPoint> &p, Secs start, Secs end, Secs in
     for (int i=0; i < n; ++i){
 
         if (method != s.method()) {
-            cout << "CHANGED" << endl;
             gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
             method = s.method();
         }
@@ -1695,9 +1628,6 @@ void plot(PlaneWall &s, vector<PlaneWallPoint> &p, Secs start, Secs end, Secs in
             p[j].time(cur);
             temp_at_point(s, p[j], envmat);
             all_temp[j].push_back(make_pair(cur, p[j].temp()));
-            cout << p[j].temp() << endl;
-            cout << "cur is" << all_temp[j][i].first << endl;
-            cout << "temp is" << all_temp[j][i].second << endl;
         }
         cur += intrv;
     }
@@ -1707,7 +1637,6 @@ void plot(PlaneWall &s, vector<PlaneWallPoint> &p, Secs start, Secs end, Secs in
         p[j].time(cur);
         temp_at_point(s, p[j], envmat);
         all_temp[j].push_back(make_pair(cur, p[j].temp()));
-        cout << p[j].temp() << endl;
     }
 
     gp << "set title 'Temperature vs Time'\n";
@@ -1746,7 +1675,6 @@ void plot(InfCylinder &s, vector<InfCylinderPoint> &p, Secs start, Secs end, Sec
     for (int i=0; i < n; ++i){
 
         if (method != s.method()) {
-            cout << "CHANGED" << endl;
             gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
             method = s.method();
         }
@@ -1755,9 +1683,6 @@ void plot(InfCylinder &s, vector<InfCylinderPoint> &p, Secs start, Secs end, Sec
             p[j].time(cur);
             temp_at_point(s, p[j], envmat);
             all_temp[j].push_back(make_pair(cur, p[j].temp()));
-            cout << p[j].temp() << endl;
-            cout << "cur is" << all_temp[j][i].first << endl;
-            cout << "temp is" << all_temp[j][i].second << endl;
         }
         cur += intrv;
     }
@@ -1767,7 +1692,6 @@ void plot(InfCylinder &s, vector<InfCylinderPoint> &p, Secs start, Secs end, Sec
         p[j].time(cur);
         temp_at_point(s, p[j], envmat);
         all_temp[j].push_back(make_pair(cur, p[j].temp()));
-        cout << p[j].temp() << endl;
     }
 
     gp << "set title 'Temperature vs Time'\n";
@@ -1807,7 +1731,6 @@ void plot(Cylinder &s, vector<CylinderPoint> &p, Secs start, Secs end, Secs intr
     for (int i=0; i < n; ++i){
 
         if (method != s.method()) {
-            cout << "CHANGED" << endl;
             gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
             method = s.method();
         }
@@ -1816,9 +1739,6 @@ void plot(Cylinder &s, vector<CylinderPoint> &p, Secs start, Secs end, Secs intr
             p[j].time(cur);
             temp_at_point(s, p[j], envmat);
             all_temp[j].push_back(make_pair(cur, p[j].temp()));
-            cout << p[j].temp() << endl;
-            cout << "cur is" << all_temp[j][i].first << endl;
-            cout << "temp is" << all_temp[j][i].second << endl;
         }
         cur += intrv;
     }
@@ -1828,7 +1748,6 @@ void plot(Cylinder &s, vector<CylinderPoint> &p, Secs start, Secs end, Secs intr
         p[j].time(cur);
         temp_at_point(s, p[j], envmat);
         all_temp[j].push_back(make_pair(cur, p[j].temp()));
-        cout << p[j].temp() << endl;
     }
 
     gp << "set title 'Temperature vs Time'\n";
@@ -1867,7 +1786,6 @@ void plot(RectBar &s, vector<RectBarPoint> &p, Secs start, Secs end, Secs intrv,
     for (int i=0; i < n; ++i){
 
         if (method != s.method()) {
-            cout << "CHANGED" << endl;
             gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
             method = s.method();
         }
@@ -1876,9 +1794,6 @@ void plot(RectBar &s, vector<RectBarPoint> &p, Secs start, Secs end, Secs intrv,
             p[j].time(cur);
             temp_at_point(s, p[j], envmat);
             all_temp[j].push_back(make_pair(cur, p[j].temp()));
-            cout << p[j].temp() << endl;
-            cout << "cur is" << all_temp[j][i].first << endl;
-            cout << "temp is" << all_temp[j][i].second << endl;
         }
         cur += intrv;
     }
@@ -1888,7 +1803,6 @@ void plot(RectBar &s, vector<RectBarPoint> &p, Secs start, Secs end, Secs intrv,
         p[j].time(cur);
         temp_at_point(s, p[j], envmat);
         all_temp[j].push_back(make_pair(cur, p[j].temp()));
-        cout << p[j].temp() << endl;
     }
 
     gp << "set title 'Temperature vs Time'\n";
@@ -1928,7 +1842,6 @@ void plot(InfRectBar &s, vector<InfRectBarPoint> &p, Secs start, Secs end, Secs 
     for (int i=0; i < n; ++i){
 
         if (method != s.method()) {
-            cout << "CHANGED" << endl;
             gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
             method = s.method();
         }
@@ -1937,9 +1850,6 @@ void plot(InfRectBar &s, vector<InfRectBarPoint> &p, Secs start, Secs end, Secs 
             p[j].time(cur);
             temp_at_point(s, p[j], envmat);
             all_temp[j].push_back(make_pair(cur, p[j].temp()));
-            cout << p[j].temp() << endl;
-            cout << "cur is" << all_temp[j][i].first << endl;
-            cout << "temp is" << all_temp[j][i].second << endl;
         }
         cur += intrv;
     }
@@ -1949,7 +1859,6 @@ void plot(InfRectBar &s, vector<InfRectBarPoint> &p, Secs start, Secs end, Secs 
         p[j].time(cur);
         temp_at_point(s, p[j], envmat);
         all_temp[j].push_back(make_pair(cur, p[j].temp()));
-        cout << p[j].temp() << endl;
     }
 
     gp << "set title 'Temperature vs Time'\n";
