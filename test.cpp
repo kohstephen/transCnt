@@ -43,8 +43,8 @@ int main(){
     */ 
     
     RectBar rb = RectBar(.09, .1, .11, mat, t_init);
-    vector<int> meshes {9, 20, 45, 99, 1000};
-    vector<string> ann {"1,000", "10,000", "100,000", "1,000,000", "1B"};
+    vector<int> meshes {9, 20, 45, 99, 214};
+    vector<string> ann {"1,000", "10,000", "100,000", "1,000,000", "10M"};
 
     typedef std::chrono::high_resolution_clock Clock; 
 
