@@ -18,3 +18,7 @@ void Point::temp(Kelvin temp){
 Secs Point::time(){
     return _secs;
 }
+
+void Point::time(Secs secs){
+    _secs = secs;
+}

@@ -3,6 +3,7 @@ Geometry::Geometry(string mat, Kelvin t_init){
     _t_init = t_init;
     calculate(mat);
 	// vector<Point> _temp_dist;	
+    _method = -1;
 }
 
 Geometry::Geometry(float k, float c, float p, Kelvin t_init){
@@ -12,12 +13,21 @@ Geometry::Geometry(float k, float c, float p, Kelvin t_init){
     _p = p;
     _a =  _k/(_p*_c);
     // vector<Point> _temp_dist;
+    _method = -1;
 }
 
 Geometry::~Geometry(){}
 
 Kelvin Geometry::t_init(){
     return _t_init;
+}
+
+void Geometry::method(int method){
+    _method = method;
+}
+
+int Geometry::method(){
+    return _method;
 }
 
 void Geometry::calculate(string mat){

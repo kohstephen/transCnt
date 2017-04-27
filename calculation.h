@@ -60,7 +60,42 @@ float kelvin_to_fahrenheit(Kelvin k);
  */
 float kelvin_to_celcius(Kelvin k);
 
+// avg
+
+float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat);
+
+float avg_temp_at_time(PlaneWall &s, Secs time, EnvMat &envmat);
+
+float avg_temp_at_time(InfCylinder &s, Secs time, EnvMat &envmat);
+
+float avg_temp_at_time(Cylinder &s, Secs time, EnvMat &envmat);
+
+float avg_temp_at_time(RectBar &s, Secs time, EnvMat &envmat);
+
+float avg_temp_at_time(InfRectBar &s, Secs time, EnvMat &envmat);
+
 // Plot
 void plot(Sphere &s, Secs start, Secs end, Secs intrv, EnvMat &envmat);
 
+void plot(PlaneWall &s, Secs start, Secs end, Secs intrv, EnvMat &envmat);
+
+void plot(InfCylinder &s, Secs start, Secs end, Secs intrv, EnvMat &envmat);
+
+void plot(Cylinder &s, Secs start, Secs end, Secs intrv, EnvMat &envmat);
+
+void plot(RectBar &s, Secs start, Secs end, Secs intrv, EnvMat &envmat);
+
+void plot(InfRectBar &s, Secs start, Secs end, Secs intrv, EnvMat &envmat);
+
+void plot(Sphere &s, vector<SpherePoint> &p, Secs start, Secs end, Secs intrv, EnvMat &envmat);
+
+void plot(PlaneWall &s, vector<PlaneWallPoint> &p, Secs start, Secs end, Secs intrv, EnvMat &envmat);
+
+void plot(InfCylinder &s, vector<InfCylinderPoint> &p, Secs start, Secs end, Secs intrv, EnvMat &envmat);
+
+void plot(Cylinder &s, vector<CylinderPoint> &p, Secs start, Secs end, Secs intrv, EnvMat &envmat);
+
+void plot(RectBar &s, vector<RectBarPoint> &p, Secs start, Secs end, Secs intrv, EnvMat &envmat);
+
+void plot(InfRectBar &s, vector<InfRectBarPoint> &p, Secs start, Secs end, Secs intrv, EnvMat &envmat);
 #endif

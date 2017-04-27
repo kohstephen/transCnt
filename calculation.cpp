@@ -3,9 +3,9 @@
 #include <iostream>
 #include "calculation.h"
 #include <valarray>
-#include "gnuplot-iostream/gnuplot-iostream.h"
 #include <iostream>
 #include <fstream>
+#include "gnuplot-iostream/gnuplot-iostream.h"
 
 
 extern const float PI = 3.14159265;
@@ -42,6 +42,7 @@ float biot(float h, float k, float x){
  * x is length L for plane wall
  */
 float fourier(float alpha, float time, float x){
+    cout << "alpha" << alpha << endl;
     return alpha*time/(x*x);
 }
 
@@ -49,6 +50,7 @@ float fourier(float alpha, float time, float x){
  * Calculate temperature from theta and the init and infinite temparature
  */
 float theta_to_temp(float theta, float t_init, float t_inf){
+    cout << "theta is " << theta << endl;
     return theta*(t_init-t_inf)+t_inf;
 }
 
@@ -168,13 +170,12 @@ float planewall_one_term_at_time_at_point(float fourier, float biot, float x, fl
 float sphere_one_term_at_time_at_point(float fourier, float biot, float r, float r0){
     float zeta = sphere_solve_for_zeta(biot,1); 
     float c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
-    float y = zeta*r/r0;
-    float theta; 
-    if (r == 0) {
+    float temp = zeta*r/r0;
+    float theta;
+    if (r == 0)
         theta = c1*exp(-zeta*zeta*fourier);
-    } else {
-        theta = c1*exp(-zeta*zeta*fourier)*(1/y)*sin(y);
-    }
+    else
+        theta = c1*exp(-zeta*zeta*fourier)*(1/temp)*sin(temp);
     return theta;
 }
 
@@ -189,6 +190,9 @@ float infinitecylinder_multiple_term_at_time_at_point(float fourier, float biot,
         if(n>1){
             zeta_n_1 = zeta_n;
             c_n_1 = c_n;
+        }
+        if (n>5) {
+            break;
         }
         zeta_n = cylinder_solve_for_zeta(biot, n);
         j0 = std::tr1::cyl_bessel_j(0,zeta_n);
@@ -246,12 +250,11 @@ float sphere_multiple_term_at_time_at_point(float fourier, float biot, float r, 
             float ratio = abs(c_n*exp(-zeta_n*zeta_n*fourier)/(c_n_1*exp(-zeta_n_1*zeta_n_1*fourier)));
             if(ratio < RATIO) break;
         }
-        float y = zeta_n*r/r0;
-        if (r == 0) {
-            theta += c_n*exp(-zeta_n*zeta_n*fourier);    
-        } else { 
-            theta += c_n*exp(-zeta_n*zeta_n*fourier)*(1/y)*sin(y);
-        }
+        float temp = zeta_n*r/r0;
+        if (r == 0) 
+            theta += c_n*exp(-zeta_n*zeta_n*fourier);
+        else
+            theta += c_n*exp(-zeta_n*zeta_n*fourier)*(1/temp)*sin(temp);
         n += 1;
     }
     return theta;
@@ -264,12 +267,17 @@ float sphere_multiple_term_at_time_at_point(float fourier, float biot, float r, 
  */
 float semi_infinite_at_time_at_point(float x, float alpha, float time, float h, float k){
     float y = sqrt(alpha*time);
-    float z = x/(2*y);
     float theta;
-    if (y == 0) { 
-        theta = 0;
-    } else {
+
+    if (time != 0) {
+        float z = x/(2*y);
+        errno = 0;
         theta = erfc(z) - exp(h*x/k + h*h*alpha*time/(k*k))*erfc(z+h*y/k);
+        if (errno == ERANGE)
+           theta = erfc(z);
+        cout << "now theta is " << theta << endl;
+    } else {
+        theta = 0;
     }
     return 1 - theta;
 }
@@ -290,6 +298,8 @@ float theta_at_point(Sphere &s, SpherePoint &p, float h){
 
     //Lumped Capacitance. Use this when Bi < 0.1
     if(bi<0.1){
+        s.method(0);
+        cout << "method 0" << endl;
         return sphere_lumped_cap_at_time(r0, density, h, c, time);
     }
 
@@ -298,16 +308,22 @@ float theta_at_point(Sphere &s, SpherePoint &p, float h){
     float fo = fourier(alpha, time, r0);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
+        s.method(1);
+        cout << "method 1" << endl;
         return sphere_one_term_at_time_at_point(fo, bi, r, r0);
     }
 
 
     //Multiple-Term Approximation.
     if(fo > 0.05){
+        s.method(2);
+        cout << "method 2" << endl;
         return sphere_multiple_term_at_time_at_point(fo, bi, r, r0);
     }
 
     //semi-infinite approximation
+    s.method(3);
+    cout << "method 3" << endl;
     return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k); 
 }
 
@@ -325,6 +341,7 @@ float theta_at_point(PlaneWall &w, PlaneWallPoint &p, float h){
     float c = w.c();
 
     if(bi<0.1){
+        w.method(0);
         return planewall_lumped_cap_at_time(L, density, h, c, time);
     }
 
@@ -332,15 +349,18 @@ float theta_at_point(PlaneWall &w, PlaneWallPoint &p, float h){
     float fo = fourier(alpha, time, L);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
+        w.method(1);
         return planewall_one_term_at_time_at_point(fo, bi, x, L);
     }
 
     //Multiple-Term Approximation.
     if(fo > 0.05){
+        w.method(2);
         return planewall_multiple_term_at_time_at_point(fo, bi, x, L);
     }
 
     //semi-infinite approximation
+    w.method(3);
     return semi_infinite_at_time_at_point(L-x, alpha, time, h, k);
 }
 
@@ -357,6 +377,7 @@ float theta_at_point(InfCylinder &icyl, InfCylinderPoint &p, float h){
     float density = icyl.p();
     float c = icyl.c();
     if(bi<0.1){
+        icyl.method(0);
         return infinitecylinder_lumped_cap_at_time(r0, density, h, c, time);
     }
 
@@ -365,15 +386,19 @@ float theta_at_point(InfCylinder &icyl, InfCylinderPoint &p, float h){
     float fo = fourier(alpha, time, r0);
     //One-Term Approximation. Use this when Fo > 0.2
     if(fo > 0.2){
+        icyl.method(1);
+        cout << "1" << endl;
         return infinitecylinder_one_term_at_time_at_point(fo, bi, r, r0);
     }
 
     //Multiple-Term Approximation.
     if(fo > 0.05){
+        icyl.method(2);
         return infinitecylinder_multiple_term_at_time_at_point(fo, bi, r, r0);
     }
 
     //semi-infinite approximation
+    icyl.method(3);
     return semi_infinite_at_time_at_point(r0-r, alpha, time, h, k);
 }
 
@@ -496,11 +521,11 @@ valarray<float> semi_infinite_at_time_on_mesh(valarray<float> x, float alpha, fl
     valarray<float> z (x/(2*y));
     // not allowed to do erfc on valarrays -- have to iterate over each element in valarray
     valarray<float> theta (x.size());
-    // erfc(infty) = 0, but gives error  
-    if (y != 0) { 
-        for (int i = 0; i < theta.size(); i++) { 
-            theta[i] = erfc(z[i]) - exp(h*x[i]/k + h*h*alpha*time/(k*k))*erfc(z[i]+h*y/k);
-        }
+    for (int i = 0; i < theta.size(); i++) { 
+        errno = 0;
+        theta[i] = erfc(z[i]) - exp(h*x[i]/k + h*h*alpha*time/(k*k))*erfc(z[i]+h*y/k);
+        if (errno == ERANGE)
+           theta[i] = erfc(z[i]);
     }
     valarray<float> ones (1, x.size());
     return ones - theta;
@@ -599,6 +624,8 @@ valarray<float> infinitecylinder_multiple_term_at_time_on_mesh(float fourier, fl
             zeta_n_1 = zeta_n;
             c_n_1 = c_n;
         }
+        if (n>5)
+            break;
         zeta_n = cylinder_solve_for_zeta(biot, n);
         j0 = std::tr1::cyl_bessel_j(0,zeta_n);
         j1 = std::tr1::cyl_bessel_j(1,zeta_n);
@@ -1047,7 +1074,7 @@ float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat){
         }
     }
 
-    return s.t_init();
+    return (s.t_init() - envmat.t_inf()) / (s.t_init() - envmat.t_inf()) ;
 }
 
 
@@ -1096,7 +1123,7 @@ float avg_temp_at_time(PlaneWall &w, Secs time, EnvMat &envmat){
         }
     }
 
-    return w.t_init();
+    return (w.t_init() - envmat.t_inf()) / (w.t_init() - envmat.t_inf()) ;
 }
 
 float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
@@ -1136,6 +1163,8 @@ float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
         term_prev = theta;
         ++n;
         while(true) {
+            if (n>5)
+                break;
             zeta = cylinder_solve_for_zeta(bi,n);
             j0 = std::tr1::cyl_bessel_j(0,zeta);
             j1 = std::tr1::cyl_bessel_j(1,zeta);
@@ -1151,7 +1180,7 @@ float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
         }
     }
 
-    return icyl.t_init();
+    return (icyl.t_init() - envmat.t_inf()) / (icyl.t_init() - envmat.t_inf()) ;
 }
 
 float avg_temp_at_time(RectBar &rb, Secs time, EnvMat &envmat){
@@ -1274,38 +1303,673 @@ void plot(Sphere &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     Gnuplot gp;
 
     int n = (end - start) / intrv;
+    int method = -1;
     Secs cur;
+    float y_high = max(s.t_init(), envmat.t_inf());
+    float y_low = min(s.t_init(), envmat.t_inf());
 
     vector<pair<double,double>> avg_temp;
     vector<pair<double,double>> min_temp;
     vector<pair<double,double>> max_temp;
 
-
     cur = start;
     for (int i=0; i < n; ++i){
+        auto min_max = min_max_points(s, cur, envmat);
         avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+        cout << theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf());
 
-        pair<SpherePoint, SpherePoint> min_max = min_max_points(s, cur, envmat);
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
         temp_at_point(s, min_max.second, envmat);
         max_temp.push_back(make_pair(cur, min_max.second.temp()));
+        if (method != s.method()) {
+            gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
+            method = s.method();
+        }
+
         cur += intrv;
+
+        cout << " min " << min_max.first.temp() << " max " << min_max.second.temp() << endl;
     }
 
     cur = end;
+    auto min_max = min_max_points(s, cur, envmat);
     avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
-    pair<SpherePoint, SpherePoint> min_max = min_max_points(s, cur, envmat);
     temp_at_point(s, min_max.first, envmat);
     min_temp.push_back(make_pair(cur, min_max.first.temp()));
     temp_at_point(s, min_max.second, envmat);
     max_temp.push_back(make_pair(cur, min_max.second.temp()));
 
-    gp << "set xrange [-" << start << ":" << end << "]\n";
-    //gp << "plot '-' with linespoints\n";
-    //gp.send1d(avg_temp);
-    gp << "plot '-' with linespoints\n";
-    gp.send1d(min_temp);
-    gp << "plot '-' with linespoints\n";
+    gp << "set title 'Temperature vs Time'\n";
+    gp << "set xrange [" << start << ":" << end << "]\n";
+    gp << "set yrange [" << y_low << ":" << y_high << "]\n";
+    gp << "set xlabel 'Time (s)'\n";
+    gp << "set ylabel 'Temperature (K)'\n";
+    gp << "plot '-' with points pointtype 5 lc rgb 'red' title 'max', '-' with points pointtype 7 lc rgb 'orange' title 'avg', '-' with points pointtype 10 lc rgb 'blue' title 'min'\n";
     gp.send1d(max_temp);
+    gp.send1d(avg_temp);
+    gp.send1d(min_temp);
 }
+
+void plot(PlaneWall &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
+    Gnuplot gp;
+
+    int n = (end - start) / intrv;
+    int method = -1;
+    Secs cur;
+    float y_high = max(s.t_init(), envmat.t_inf());
+    float y_low = min(s.t_init(), envmat.t_inf());
+
+    vector<pair<double,double>> avg_temp;
+    vector<pair<double,double>> min_temp;
+    vector<pair<double,double>> max_temp;
+
+    cur = start;
+    for (int i=0; i < n; ++i){
+        auto min_max = min_max_points(s, cur, envmat);
+        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+        cout << theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf());
+
+        temp_at_point(s, min_max.first, envmat);
+        min_temp.push_back(make_pair(cur, min_max.first.temp()));
+        temp_at_point(s, min_max.second, envmat);
+        max_temp.push_back(make_pair(cur, min_max.second.temp()));
+        if (method != s.method()) {
+            gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
+            method = s.method();
+        }
+
+        cur += intrv;
+
+        cout << " min " << min_max.first.temp() << " max " << min_max.second.temp() << endl;
+    }
+
+    cur = end;
+    auto min_max = min_max_points(s, cur, envmat);
+    avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
+    temp_at_point(s, min_max.first, envmat);
+    min_temp.push_back(make_pair(cur, min_max.first.temp()));
+    temp_at_point(s, min_max.second, envmat);
+    max_temp.push_back(make_pair(cur, min_max.second.temp()));
+
+    gp << "set title 'Temperature vs Time'\n";
+    gp << "set xrange [" << start << ":" << end << "]\n";
+    gp << "set yrange [" << y_low << ":" << y_high << "]\n";
+    gp << "set xlabel 'Time (s)'\n";
+    gp << "set ylabel 'Temperature (K)'\n";
+    gp << "plot '-' with points pointtype 5 lc rgb 'red' title 'max', '-' with points pointtype 7 lc rgb 'orange' title 'avg', '-' with points pointtype 10 lc rgb 'blue' title 'min'\n";
+    gp.send1d(max_temp);
+    gp.send1d(avg_temp);
+    gp.send1d(min_temp);
+}
+
+void plot(InfCylinder &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
+    Gnuplot gp;
+
+    int n = (end - start) / intrv;
+    int method = -1;
+    Secs cur;
+    float y_high = max(s.t_init(), envmat.t_inf());
+    float y_low = min(s.t_init(), envmat.t_inf());
+
+    vector<pair<double,double>> avg_temp;
+    vector<pair<double,double>> min_temp;
+    vector<pair<double,double>> max_temp;
+
+    cur = start;
+    for (int i=0; i < n; ++i){
+        auto min_max = min_max_points(s, cur, envmat);
+        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+        cout << theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf());
+
+        temp_at_point(s, min_max.first, envmat);
+        min_temp.push_back(make_pair(cur, min_max.first.temp()));
+        temp_at_point(s, min_max.second, envmat);
+        max_temp.push_back(make_pair(cur, min_max.second.temp()));
+        if (method != s.method()) {
+            gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
+            method = s.method();
+        }
+
+        cur += intrv;
+
+        cout << " min " << min_max.first.temp() << " max " << min_max.second.temp() << endl;
+    }
+
+    cur = end;
+    auto min_max = min_max_points(s, cur, envmat);
+    avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
+    temp_at_point(s, min_max.first, envmat);
+    min_temp.push_back(make_pair(cur, min_max.first.temp()));
+    temp_at_point(s, min_max.second, envmat);
+    max_temp.push_back(make_pair(cur, min_max.second.temp()));
+
+    gp << "set title 'Temperature vs Time'\n";
+    gp << "set xrange [" << start << ":" << end << "]\n";
+    gp << "set yrange [" << y_low << ":" << y_high << "]\n";
+    gp << "set xlabel 'Time (s)'\n";
+    gp << "set ylabel 'Temperature (K)'\n";
+    gp << "plot '-' with points pointtype 5 lc rgb 'red' title 'max', '-' with points pointtype 7 lc rgb 'orange' title 'avg', '-' with points pointtype 10 lc rgb 'blue' title 'min'\n";
+    gp.send1d(max_temp);
+    gp.send1d(avg_temp);
+    gp.send1d(min_temp);
+}
+
+void plot(InfRectBar &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
+    Gnuplot gp;
+
+    int n = (end - start) / intrv;
+    int method = -1;
+    Secs cur;
+    float y_high = max(s.t_init(), envmat.t_inf());
+    float y_low = min(s.t_init(), envmat.t_inf());
+
+    vector<pair<double,double>> avg_temp;
+    vector<pair<double,double>> min_temp;
+    vector<pair<double,double>> max_temp;
+
+    cur = start;
+    for (int i=0; i < n; ++i){
+        auto min_max = min_max_points(s, cur, envmat);
+        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+        cout << theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf());
+
+        temp_at_point(s, min_max.first, envmat);
+        min_temp.push_back(make_pair(cur, min_max.first.temp()));
+        temp_at_point(s, min_max.second, envmat);
+        max_temp.push_back(make_pair(cur, min_max.second.temp()));
+        if (method != s.method()) {
+            gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
+            method = s.method();
+        }
+
+        cur += intrv;
+
+        cout << " min " << min_max.first.temp() << " max " << min_max.second.temp() << endl;
+    }
+
+    cur = end;
+    auto min_max = min_max_points(s, cur, envmat);
+    avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
+    temp_at_point(s, min_max.first, envmat);
+    min_temp.push_back(make_pair(cur, min_max.first.temp()));
+    temp_at_point(s, min_max.second, envmat);
+    max_temp.push_back(make_pair(cur, min_max.second.temp()));
+
+    gp << "set title 'Temperature vs Time'\n";
+    gp << "set xrange [" << start << ":" << end << "]\n";
+    gp << "set yrange [" << y_low << ":" << y_high << "]\n";
+    gp << "set xlabel 'Time (s)'\n";
+    gp << "set ylabel 'Temperature (K)'\n";
+    gp << "plot '-' with points pointtype 5 lc rgb 'red' title 'max', '-' with points pointtype 7 lc rgb 'orange' title 'avg', '-' with points pointtype 10 lc rgb 'blue' title 'min'\n";
+    gp.send1d(max_temp);
+    gp.send1d(avg_temp);
+    gp.send1d(min_temp);
+}
+
+void plot(Cylinder &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
+    Gnuplot gp;
+
+    int n = (end - start) / intrv;
+    int method = -1;
+    Secs cur;
+    float y_high = max(s.t_init(), envmat.t_inf());
+    float y_low = min(s.t_init(), envmat.t_inf());
+
+    vector<pair<double,double>> avg_temp;
+    vector<pair<double,double>> min_temp;
+    vector<pair<double,double>> max_temp;
+
+    cur = start;
+    for (int i=0; i < n; ++i){
+        auto min_max = min_max_points(s, cur, envmat);
+        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+        cout << theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf());
+
+        temp_at_point(s, min_max.first, envmat);
+        min_temp.push_back(make_pair(cur, min_max.first.temp()));
+        temp_at_point(s, min_max.second, envmat);
+        max_temp.push_back(make_pair(cur, min_max.second.temp()));
+        if (method != s.method()) {
+            gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
+            method = s.method();
+        }
+
+        cur += intrv;
+
+        cout << " min " << min_max.first.temp() << " max " << min_max.second.temp() << endl;
+    }
+
+    cur = end;
+    auto min_max = min_max_points(s, cur, envmat);
+    avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
+    temp_at_point(s, min_max.first, envmat);
+    min_temp.push_back(make_pair(cur, min_max.first.temp()));
+    temp_at_point(s, min_max.second, envmat);
+    max_temp.push_back(make_pair(cur, min_max.second.temp()));
+
+    gp << "set title 'Temperature vs Time'\n";
+    gp << "set xrange [" << start << ":" << end << "]\n";
+    gp << "set yrange [" << y_low << ":" << y_high << "]\n";
+    gp << "set xlabel 'Time (s)'\n";
+    gp << "set ylabel 'Temperature (K)'\n";
+    gp << "plot '-' with points pointtype 5 lc rgb 'red' title 'max', '-' with points pointtype 7 lc rgb 'orange' title 'avg', '-' with points pointtype 10 lc rgb 'blue' title 'min'\n";
+    gp.send1d(max_temp);
+    gp.send1d(avg_temp);
+    gp.send1d(min_temp);
+}
+
+void plot(RectBar &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
+    Gnuplot gp;
+
+    int n = (end - start) / intrv;
+    int method = -1;
+    Secs cur;
+    float y_high = max(s.t_init(), envmat.t_inf());
+    float y_low = min(s.t_init(), envmat.t_inf());
+
+    vector<pair<double,double>> avg_temp;
+    vector<pair<double,double>> min_temp;
+    vector<pair<double,double>> max_temp;
+
+    cur = start;
+    for (int i=0; i < n; ++i){
+        auto min_max = min_max_points(s, cur, envmat);
+        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+        cout << theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf());
+
+        temp_at_point(s, min_max.first, envmat);
+        min_temp.push_back(make_pair(cur, min_max.first.temp()));
+        temp_at_point(s, min_max.second, envmat);
+        max_temp.push_back(make_pair(cur, min_max.second.temp()));
+        if (method != s.method()) {
+            gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
+            method = s.method();
+        }
+
+        cur += intrv;
+
+        cout << " min " << min_max.first.temp() << " max " << min_max.second.temp() << endl;
+    }
+
+    cur = end;
+    auto min_max = min_max_points(s, cur, envmat);
+    avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
+    temp_at_point(s, min_max.first, envmat);
+    min_temp.push_back(make_pair(cur, min_max.first.temp()));
+    temp_at_point(s, min_max.second, envmat);
+    max_temp.push_back(make_pair(cur, min_max.second.temp()));
+
+    gp << "set title 'Temperature vs Time'\n";
+    gp << "set xrange [" << start << ":" << end << "]\n";
+    gp << "set yrange [" << y_low << ":" << y_high << "]\n";
+    gp << "set xlabel 'Time (s)'\n";
+    gp << "set ylabel 'Temperature (K)'\n";
+    gp << "plot '-' with points pointtype 5 lc rgb 'red' title 'max', '-' with points pointtype 7 lc rgb 'orange' title 'avg', '-' with points pointtype 10 lc rgb 'blue' title 'min'\n";
+    gp.send1d(max_temp);
+    gp.send1d(avg_temp);
+    gp.send1d(min_temp);
+}
+
+void plot(Sphere &s, vector<SpherePoint> &p, Secs start, Secs end, Secs intrv, EnvMat &envmat){
+    Gnuplot gp;
+
+    int n = (end - start) / intrv;
+    int method = -1;
+    Secs cur;
+    float y_high = max(s.t_init(), envmat.t_inf());
+    float y_low = min(s.t_init(), envmat.t_inf());
+
+    vector<vector<pair<double,double>>> all_temp(p.size());
+
+    cur = start;
+    for (int i=0; i < n; ++i){
+
+        if (method != s.method()) {
+            cout << "CHANGED" << endl;
+            gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
+            method = s.method();
+        }
+
+        for (int j =0; j<all_temp.size(); ++j) {
+            p[j].time(cur);
+            temp_at_point(s, p[j], envmat);
+            all_temp[j].push_back(make_pair(cur, p[j].temp()));
+            cout << p[j].temp() << endl;
+            cout << "cur is" << all_temp[j][i].first << endl;
+            cout << "temp is" << all_temp[j][i].second << endl;
+        }
+        cur += intrv;
+    }
+
+    cur = end;
+    for (int j = 0; j < all_temp.size(); ++j) {
+        p[j].time(cur);
+        temp_at_point(s, p[j], envmat);
+        all_temp[j].push_back(make_pair(cur, p[j].temp()));
+        cout << p[j].temp() << endl;
+    }
+
+    gp << "set title 'Temperature vs Time'\n";
+    gp << "set xrange [" << start << ":" << end << "]\n";
+    gp << "set yrange [" << y_low << ":" << y_high << "]\n";
+    gp << "set xlabel 'Time (s)'\n";
+    gp << "set ylabel 'Temperature (K)'\n";
+
+    if (all_temp.size() == 1) {
+        gp << "plot '-' with points\n";
+    } else {
+        gp << "plot '-' with points, ";
+        for(int i=1; i<all_temp.size() - 1; ++i) {
+            gp << "'-' with points, ";
+        }
+        gp << "'-' with points\n";
+    }
+
+    for(int i=0; i<all_temp.size(); ++i) {
+        gp.send1d(all_temp[i]);
+    }
+}
+
+void plot(PlaneWall &s, vector<PlaneWallPoint> &p, Secs start, Secs end, Secs intrv, EnvMat &envmat){
+    Gnuplot gp;
+
+    int n = (end - start) / intrv;
+    int method = -1;
+    Secs cur;
+    float y_high = max(s.t_init(), envmat.t_inf());
+    float y_low = min(s.t_init(), envmat.t_inf());
+
+    vector<vector<pair<double,double>>> all_temp(p.size());
+
+    cur = start;
+    for (int i=0; i < n; ++i){
+
+        if (method != s.method()) {
+            cout << "CHANGED" << endl;
+            gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
+            method = s.method();
+        }
+
+        for (int j =0; j<all_temp.size(); ++j) {
+            p[j].time(cur);
+            temp_at_point(s, p[j], envmat);
+            all_temp[j].push_back(make_pair(cur, p[j].temp()));
+            cout << p[j].temp() << endl;
+            cout << "cur is" << all_temp[j][i].first << endl;
+            cout << "temp is" << all_temp[j][i].second << endl;
+        }
+        cur += intrv;
+    }
+
+    cur = end;
+    for (int j = 0; j < all_temp.size(); ++j) {
+        p[j].time(cur);
+        temp_at_point(s, p[j], envmat);
+        all_temp[j].push_back(make_pair(cur, p[j].temp()));
+        cout << p[j].temp() << endl;
+    }
+
+    gp << "set title 'Temperature vs Time'\n";
+    gp << "set xrange [" << start << ":" << end << "]\n";
+    gp << "set yrange [" << y_low << ":" << y_high << "]\n";
+    gp << "set xlabel 'Time (s)'\n";
+    gp << "set ylabel 'Temperature (K)'\n";
+
+    if (all_temp.size() == 1) {
+        gp << "plot '-' with points\n";
+    } else {
+        gp << "plot '-' with points, ";
+        for(int i=1; i<all_temp.size() - 1; ++i) {
+            gp << "'-' with points, ";
+        }
+        gp << "'-' with points\n";
+    }
+
+    for(int i=0; i<all_temp.size(); ++i) {
+        gp.send1d(all_temp[i]);
+    }
+}
+
+void plot(InfCylinder &s, vector<InfCylinderPoint> &p, Secs start, Secs end, Secs intrv, EnvMat &envmat){
+    Gnuplot gp;
+
+    int n = (end - start) / intrv;
+    int method = -1;
+    Secs cur;
+    float y_high = max(s.t_init(), envmat.t_inf());
+    float y_low = min(s.t_init(), envmat.t_inf());
+
+    vector<vector<pair<double,double>>> all_temp(p.size());
+
+    cur = start;
+    for (int i=0; i < n; ++i){
+
+        if (method != s.method()) {
+            cout << "CHANGED" << endl;
+            gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
+            method = s.method();
+        }
+
+        for (int j =0; j<all_temp.size(); ++j) {
+            p[j].time(cur);
+            temp_at_point(s, p[j], envmat);
+            all_temp[j].push_back(make_pair(cur, p[j].temp()));
+            cout << p[j].temp() << endl;
+            cout << "cur is" << all_temp[j][i].first << endl;
+            cout << "temp is" << all_temp[j][i].second << endl;
+        }
+        cur += intrv;
+    }
+
+    cur = end;
+    for (int j = 0; j < all_temp.size(); ++j) {
+        p[j].time(cur);
+        temp_at_point(s, p[j], envmat);
+        all_temp[j].push_back(make_pair(cur, p[j].temp()));
+        cout << p[j].temp() << endl;
+    }
+
+    gp << "set title 'Temperature vs Time'\n";
+    gp << "set xrange [" << start << ":" << end << "]\n";
+    gp << "set yrange [" << y_low << ":" << y_high << "]\n";
+    gp << "set xlabel 'Time (s)'\n";
+    gp << "set ylabel 'Temperature (K)'\n";
+
+    if (all_temp.size() == 1) {
+        gp << "plot '-' with points\n";
+    } else {
+        gp << "plot '-' with points, ";
+        for(int i=1; i<all_temp.size() - 1; ++i) {
+            gp << "'-' with points, ";
+        }
+        gp << "'-' with points\n";
+    }
+
+    for(int i=0; i<all_temp.size(); ++i) {
+        gp.send1d(all_temp[i]);
+    }
+}
+
+
+void plot(Cylinder &s, vector<CylinderPoint> &p, Secs start, Secs end, Secs intrv, EnvMat &envmat){
+    Gnuplot gp;
+
+    int n = (end - start) / intrv;
+    int method = -1;
+    Secs cur;
+    float y_high = max(s.t_init(), envmat.t_inf());
+    float y_low = min(s.t_init(), envmat.t_inf());
+
+    vector<vector<pair<double,double>>> all_temp(p.size());
+
+    cur = start;
+    for (int i=0; i < n; ++i){
+
+        if (method != s.method()) {
+            cout << "CHANGED" << endl;
+            gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
+            method = s.method();
+        }
+
+        for (int j =0; j<all_temp.size(); ++j) {
+            p[j].time(cur);
+            temp_at_point(s, p[j], envmat);
+            all_temp[j].push_back(make_pair(cur, p[j].temp()));
+            cout << p[j].temp() << endl;
+            cout << "cur is" << all_temp[j][i].first << endl;
+            cout << "temp is" << all_temp[j][i].second << endl;
+        }
+        cur += intrv;
+    }
+
+    cur = end;
+    for (int j = 0; j < all_temp.size(); ++j) {
+        p[j].time(cur);
+        temp_at_point(s, p[j], envmat);
+        all_temp[j].push_back(make_pair(cur, p[j].temp()));
+        cout << p[j].temp() << endl;
+    }
+
+    gp << "set title 'Temperature vs Time'\n";
+    gp << "set xrange [" << start << ":" << end << "]\n";
+    gp << "set yrange [" << y_low << ":" << y_high << "]\n";
+    gp << "set xlabel 'Time (s)'\n";
+    gp << "set ylabel 'Temperature (K)'\n";
+
+    if (all_temp.size() == 1) {
+        gp << "plot '-' with points\n";
+    } else {
+        gp << "plot '-' with points, ";
+        for(int i=1; i<all_temp.size() - 1; ++i) {
+            gp << "'-' with points, ";
+        }
+        gp << "'-' with points\n";
+    }
+
+    for(int i=0; i<all_temp.size(); ++i) {
+        gp.send1d(all_temp[i]);
+    }
+}
+
+void plot(RectBar &s, vector<RectBarPoint> &p, Secs start, Secs end, Secs intrv, EnvMat &envmat){
+    Gnuplot gp;
+
+    int n = (end - start) / intrv;
+    int method = -1;
+    Secs cur;
+    float y_high = max(s.t_init(), envmat.t_inf());
+    float y_low = min(s.t_init(), envmat.t_inf());
+
+    vector<vector<pair<double,double>>> all_temp(p.size());
+
+    cur = start;
+    for (int i=0; i < n; ++i){
+
+        if (method != s.method()) {
+            cout << "CHANGED" << endl;
+            gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
+            method = s.method();
+        }
+
+        for (int j =0; j<all_temp.size(); ++j) {
+            p[j].time(cur);
+            temp_at_point(s, p[j], envmat);
+            all_temp[j].push_back(make_pair(cur, p[j].temp()));
+            cout << p[j].temp() << endl;
+            cout << "cur is" << all_temp[j][i].first << endl;
+            cout << "temp is" << all_temp[j][i].second << endl;
+        }
+        cur += intrv;
+    }
+
+    cur = end;
+    for (int j = 0; j < all_temp.size(); ++j) {
+        p[j].time(cur);
+        temp_at_point(s, p[j], envmat);
+        all_temp[j].push_back(make_pair(cur, p[j].temp()));
+        cout << p[j].temp() << endl;
+    }
+
+    gp << "set title 'Temperature vs Time'\n";
+    gp << "set xrange [" << start << ":" << end << "]\n";
+    gp << "set yrange [" << y_low << ":" << y_high << "]\n";
+    gp << "set xlabel 'Time (s)'\n";
+    gp << "set ylabel 'Temperature (K)'\n";
+
+    if (all_temp.size() == 1) {
+        gp << "plot '-' with points\n";
+    } else {
+        gp << "plot '-' with points, ";
+        for(int i=1; i<all_temp.size() - 1; ++i) {
+            gp << "'-' with points, ";
+        }
+        gp << "'-' with points\n";
+    }
+
+    for(int i=0; i<all_temp.size(); ++i) {
+        gp.send1d(all_temp[i]);
+    }
+}
+
+
+void plot(InfRectBar &s, vector<InfRectBarPoint> &p, Secs start, Secs end, Secs intrv, EnvMat &envmat){
+    Gnuplot gp;
+
+    int n = (end - start) / intrv;
+    int method = -1;
+    Secs cur;
+    float y_high = max(s.t_init(), envmat.t_inf());
+    float y_low = min(s.t_init(), envmat.t_inf());
+
+    vector<vector<pair<double,double>>> all_temp(p.size());
+
+    cur = start;
+    for (int i=0; i < n; ++i){
+
+        if (method != s.method()) {
+            cout << "CHANGED" << endl;
+            gp << "set arrow from " << cur << "," << y_low << " to " << cur << "," << y_high << " nohead\n";
+            method = s.method();
+        }
+
+        for (int j =0; j<all_temp.size(); ++j) {
+            p[j].time(cur);
+            temp_at_point(s, p[j], envmat);
+            all_temp[j].push_back(make_pair(cur, p[j].temp()));
+            cout << p[j].temp() << endl;
+            cout << "cur is" << all_temp[j][i].first << endl;
+            cout << "temp is" << all_temp[j][i].second << endl;
+        }
+        cur += intrv;
+    }
+
+    cur = end;
+    for (int j = 0; j < all_temp.size(); ++j) {
+        p[j].time(cur);
+        temp_at_point(s, p[j], envmat);
+        all_temp[j].push_back(make_pair(cur, p[j].temp()));
+        cout << p[j].temp() << endl;
+    }
+
+    gp << "set title 'Temperature vs Time'\n";
+    gp << "set xrange [" << start << ":" << end << "]\n";
+    gp << "set yrange [" << y_low << ":" << y_high << "]\n";
+    gp << "set xlabel 'Time (s)'\n";
+    gp << "set ylabel 'Temperature (K)'\n";
+
+    if (all_temp.size() == 1) {
+        gp << "plot '-' with points\n";
+    } else {
+        gp << "plot '-' with points, ";
+        for(int i=1; i<all_temp.size() - 1; ++i) {
+            gp << "'-' with points, ";
+        }
+        gp << "'-' with points\n";
+    }
+
+    for(int i=0; i<all_temp.size(); ++i) {
+        gp.send1d(all_temp[i]);
+    }
+}
+

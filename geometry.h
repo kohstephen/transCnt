@@ -10,6 +10,7 @@
 class Geometry{
 private:
 	//! initial temparature of the geometry
+    int _method;
 	Kelvin _t_init;
 	//! k,c,p,a value stored
 	float _k;
@@ -31,6 +32,8 @@ public:
 	Geometry(float k, float c, float p, Kelvin t_init);
 	~Geometry();
 	Kelvin t_init();
+    int method();
+    void method(int method);
 	float k();
 	float c();
 	float p();

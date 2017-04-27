@@ -17,6 +17,7 @@ public:
 	Kelvin temp();
 	void temp(Kelvin temp);
 	Secs time();
+    void time(Secs secs);
 };
 
 #endif

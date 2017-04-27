@@ -18,6 +18,7 @@ using Dim = float;
  */
 static map<string, vector<pair<float,float> > > mat_to_k {
     {"al", { {100, 302}, {200, 237}, {300, 237}, {400, 240}, {600, 231}, {800, 218} } },
+    {"egg", { {100, .56}, {500, .56}} },
     {"st", { {300, 60.5}, {400, 56.7}, {600, 48}, {800, 39.2}, {1000, 30} } } };
 
 /**
@@ -27,6 +28,7 @@ static map<string, vector<pair<float,float> > > mat_to_k {
  */
 static map<string, vector<pair<float,float> > > mat_to_c {
     {"al", { {100, 482}, {200, 798}, {300, 903}, {400, 949}, {600, 1033}, {800, 1146} } },
+    {"egg", { {100, 3400}, {500, 3400}} },
     {"st", { {300, 434}, {400, 487}, {600, 559}, {800, 685}, {1000, 1169} } } };
 
 /**
@@ -35,6 +37,7 @@ static map<string, vector<pair<float,float> > > mat_to_c {
  */
 static map<string, float> mat_to_h {
     {"air", 100},
+    {"air2", 10},
     {"water", 1000} };
 
 /**
@@ -43,6 +46,7 @@ static map<string, float> mat_to_h {
  */
 static map<string, float> mat_to_p {
     {"al", 2702},
+    {"egg", 1202.233},
     {"st", 7854} };
 
 
