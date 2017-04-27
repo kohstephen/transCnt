@@ -9,8 +9,7 @@
 
 
 extern const float PI = 3.14159265;
-//TODO: change "RATIO" to 0.01
-float RATIO = 0.003;
+float RATIO = 0.01;
 float PRECESION = 0.001;
 float EPSILON = 0.01;
 
@@ -233,7 +232,6 @@ float planewall_multiple_term_at_time_at_point(float fourier, float biot, float 
  * Multiple-Term Approximation for sphere.
  */
 float sphere_multiple_term_at_time_at_point(float fourier, float biot, float r, float r0){
-    // std::cout << biot << std::endl;
     float theta = 0;
     int n = 1;
     float zeta_n, zeta_n_1, c_n, c_n_1;
@@ -243,15 +241,12 @@ float sphere_multiple_term_at_time_at_point(float fourier, float biot, float r, 
             c_n_1 = c_n;
         }
         zeta_n = sphere_solve_for_zeta(biot, n);
-        // std::cout << zeta_n << std::endl;
         c_n = 4.0f*(sin(zeta_n)-zeta_n*cos(zeta_n))/(2.0f*zeta_n-sin(2.0f*zeta_n));
-        // std::cout << c_n << std::endl;
         if(n>1){
             float ratio = abs(c_n*exp(-zeta_n*zeta_n*fourier)/(c_n_1*exp(-zeta_n_1*zeta_n_1*fourier)));
             if(ratio < RATIO) break;
         }
         float y = zeta_n*r/r0;
-        float theta;
         if (r == 0) {
             theta += c_n*exp(-zeta_n*zeta_n*fourier);    
         } else { 
@@ -283,62 +278,6 @@ float semi_infinite_at_time_at_point(float x, float alpha, float time, float h, 
  * Calculate theta at a particular point for sphere.
  * To get temperature, use the theta_to_temp function.
  */
-
-/**
-  vector<float> semi_infinite_at_time(vector<float>* ret, vector<float>& points, float alpha, float time, float h, float k, float t_init, float t_inf){
-  float y = sqrt(alpha*time);
-  float z = h*h*alpha*time/(k*k);
-  float diff = t_init-t_inf;
-  int i = 0;
-  for(auto it = points.begin(); it != points.end(); ++it, ++i){
-  float x = *it;
-  float q = x/(2*y);
-  float theta = erfc(q) - exp(h*x/k + z)*erfc(q+h*y/k);
-  (*ret)[i] = theta*diff+t_inf;
-  }
-  }
- **/
-
-/**
-  void temp_at_time(vector<float>* ret, Sphere s, string mat, string envmat, vector<float>& points, float time, float t_init, float t_inf){
-  float r0 = s.getRadius();
-
-//heat transfer coefficient (units: W/m^2K)
-float h = get_h(envmat);
-//conduction coefficient (units: W/mK)
-float k = get_k(mat, t_init);
-float bi = biot(h, k, r0);
-//Lumped Capacitance. Use this when Bi < 0.1
-// saved data
-float density = get_density(mat);
-float c = get_c(mat, t_init);
-if(bi<0.1){
-float temp =  sphere_lumped_cap_at_time(s, density, h, c, time, t_init, t_inf);
-for(int i = 0; i < points.size(); i++){
-(*ret)[i] = temp;
-}
-return;
-}
-
-//thermal diffusivity (units: m^2/s)
-float alpha = calculate_alpha(k, density, c);
-float fo = fourier(alpha, time, r0);
-//One-Term Approximation. Use this when Fo > 0.2
-if(fo > 0.2){
-sphere_one_term_at_time(ret, fo, bi, points, r0, t_init, t_inf);
-return;
-}
-
-//Saved data.
-if(fo > 0.05){
-
-}
-
-//semi-infinite approximation
-semi_infinite_at_time(ret, points, alpha, time, h, k, t_init, t_inf);
-
-}
- **/
 
 float theta_at_point(Sphere &s, SpherePoint &p, float h){
     float r0 = s.radius();
@@ -569,7 +508,7 @@ valarray<float> semi_infinite_at_time_on_mesh(valarray<float> x, float alpha, fl
 
 valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int num_points, EnvMat &envmat, valarray<Loc> & locs) {
     // temp_dist(w, num_points, secs);
-    float L = w.length();
+    float L = w.length(); 
     float k = w.k();
     float h = envmat.h();
     float bi = biot(h, k, L);
@@ -607,6 +546,7 @@ valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int num_points, EnvMat &e
 void output_csv(vector<PlaneWallPoint> &pts, Secs secs) {
     ofstream myfile;
     myfile.open ("pw.csv");
+    myfile << "x (m)" << "," << "temp(K)" << "\n"; 
     for (auto it = pts.begin(); it != pts.end(); it++) {
         myfile << (*it).rect_loc() << "," << (*it).temp() << "\n"; 
     }
@@ -718,6 +658,7 @@ valarray<float> theta_on_mesh(InfCylinder &icyl, Secs secs, int num_points, EnvM
 void output_csv(vector<InfCylinderPoint> &pts, Secs secs) {
     ofstream myfile;
     myfile.open ("icyl.csv");
+    myfile << "r (m)" << "," << "temp (K)" << "\n"; 
     for (auto it = pts.begin(); it != pts.end(); it++) {
         myfile << (*it).cyl_loc() << "," << (*it).temp() << "\n"; 
     }
@@ -830,6 +771,7 @@ valarray<float> theta_on_mesh(Sphere &s, Secs secs, int num_points, EnvMat &envm
 void output_csv(vector<SpherePoint> &pts, Secs secs) {
     ofstream myfile;
     myfile.open ("sphere.csv");
+    myfile << "r (m)" << "," << "time (s)" << "\n"; 
     for (auto it = pts.begin(); it != pts.end(); it++) {
         myfile << (*it).sphere_loc() << "," << (*it).temp() << "\n"; 
     }
@@ -855,7 +797,209 @@ void temp_on_mesh(Sphere &s, Secs secs, int mesh_density, EnvMat &envmat){
     output_csv(s.temp_dist(), secs);
 }
 
+void output_csv(vector<InfRectBarPoint> &pts, Secs secs) {
+    ofstream myfile;
+    myfile.open ("irb.csv");
+    myfile << "x1 (m)" << "," << "x2 (m)" << "," << "temp (K)" << "\n"; 
+    for (auto it = pts.begin(); it != pts.end(); it++) {
+        myfile << (*it).rect_loc1() << "," << (*it).rect_loc2() << "," << (*it).temp() << "\n"; 
+    }
+    myfile.close();
+}
 
+void temp_on_mesh(InfRectBar &irb, Secs secs, int mesh_density, EnvMat &envmat){
+    int num_points = mesh_density + 1; 
+    valarray<Loc> locs1 (num_points);   
+    valarray<Loc> locs2 (num_points);   
+    float k = irb.k();
+    float c = irb.c();
+    float density = irb.p();
+    Kelvin t_init = irb.t_init();
+    float h = envmat.h();
+
+    PlaneWall pw1 = PlaneWall(irb.l1(), k,c,density, t_init);
+    PlaneWall pw2 = PlaneWall(irb.l2(), k,c,density, t_init);
+
+    // planewall 1's thetas
+    valarray<float> theta1 = theta_on_mesh(pw1, secs, num_points, envmat, locs1);
+    // planewall 2's thetas
+    valarray<float> theta2 = theta_on_mesh(pw2, secs, num_points, envmat, locs2);
+    int rows = theta1.size();
+    int cols = theta2.size();
+    valarray<float> prod (rows * cols);
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            prod[i*cols + j] = theta1[i] * theta2[j]; 
+        }
+    }
+    
+    valarray<Kelvin> temps = theta_to_temp(prod, irb.t_init(), envmat.t_inf());  
+    /* 
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+           cout << prod[i*cols + j] << " "; 
+        }
+        cout << endl;
+    }
+    cout << endl;
+     
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            cout << temps[i*cols + j] << " ";        
+        }
+        cout << endl;
+    }
+    */
+    
+    vector<InfRectBarPoint> temp_dist; 
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            temp_dist.push_back(InfRectBarPoint(locs1[i], locs2[j], secs));
+            temp_dist[i*cols + j].temp(temps[i*cols + j]); 
+        }
+    }
+    irb.temp_dist(temp_dist); 
+    output_csv(irb.temp_dist(), secs);
+}
+
+void output_csv(vector<CylinderPoint> &pts, Secs secs) {
+    ofstream myfile;
+    myfile.open ("cyl.csv");
+    myfile << "r (m)" << "," << "x (m)" << "," << "temp (K)" << "\n"; 
+    for (auto it = pts.begin(); it != pts.end(); it++) {
+        myfile << (*it).cyl_loc() << "," << (*it).rect_loc() << "," << (*it).temp() << "\n"; 
+    }
+    myfile.close();
+}
+
+void temp_on_mesh(Cylinder &cyl, Secs secs, int mesh_density, EnvMat &envmat){
+    int num_points = mesh_density + 1; 
+    valarray<Loc> locs1 (num_points);   
+    valarray<Loc> locs2 (num_points);   
+    float k = cyl.k();
+    float c = cyl.c();
+    float density = cyl.p();
+    Kelvin t_init = cyl.t_init();
+    float h = envmat.h();
+
+    InfCylinder icyl = InfCylinder(cyl.radius(), k,c,density, t_init);
+    PlaneWall pw = PlaneWall(cyl.length(), k,c,density, t_init);
+
+    // planewall 1's thetas
+    valarray<float> theta1 = theta_on_mesh(icyl, secs, num_points, envmat, locs1);
+    // planewall 2's thetas
+    valarray<float> theta2 = theta_on_mesh(pw, secs, num_points, envmat, locs2 );
+    int rows = theta1.size();
+    int cols = theta2.size();
+    valarray<float> prod (rows * cols);
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            prod[i*cols + j] = theta1[i] * theta2[j]; 
+        }
+    }
+    
+    valarray<Kelvin> temps = theta_to_temp(prod, cyl.t_init(), envmat.t_inf());  
+    /*
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+           cout << prod[i*cols + j] << " "; 
+        }
+        cout << endl;
+    }
+    cout << endl;
+     
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            cout << temps[i*cols + j] << " ";        
+        }
+        cout << endl;
+    }
+    */ 
+        
+    vector<CylinderPoint> temp_dist; 
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            temp_dist.push_back(CylinderPoint(locs1[i], locs2[j], secs));
+            temp_dist[i*cols + j].temp(temps[i*cols + j]); 
+        }
+    }
+    cyl.temp_dist(temp_dist); 
+    output_csv(cyl.temp_dist(), secs);
+}
+
+void output_csv(vector<RectBarPoint> &pts, Secs secs) {
+    ofstream myfile;
+    myfile.open ("rb.csv");
+    myfile << "x1 (m)" << "," << "x2 (m)" << "," << "x3 (m)" << "," << "temp (K)" << "\n"; 
+    for (auto it = pts.begin(); it != pts.end(); it++) {
+        myfile << (*it).rect_loc1() << "," << (*it).rect_loc2() << "," << (*it).rect_loc3() << "," << (*it).temp() << "\n"; 
+    }
+    myfile.close();
+}
+
+void temp_on_mesh(RectBar &rb, Secs secs, int mesh_density, EnvMat &envmat){
+    int num_points = mesh_density + 1; 
+    // cout << num_points * num_points * num_points << endl;
+    valarray<Loc> locs1 (num_points);   
+    valarray<Loc> locs2 (num_points);   
+    valarray<Loc> locs3 (num_points);   
+    float k = rb.k();
+    float c = rb.c();
+    float density = rb.p();
+    Kelvin t_init = rb.t_init();
+    float h = envmat.h();
+
+    PlaneWall pw1 = PlaneWall(rb.l1(), k,c,density, t_init);
+    PlaneWall pw2 = PlaneWall(rb.l2(), k,c,density, t_init);
+    PlaneWall pw3 = PlaneWall(rb.l3(), k,c,density, t_init);
+
+    // planewall 1's thetas
+    valarray<float> theta1 = theta_on_mesh(pw1, secs, num_points, envmat, locs1);
+    // planewall 2's thetas
+    valarray<float> theta2 = theta_on_mesh(pw2, secs, num_points, envmat, locs2);
+    valarray<float> theta3 = theta_on_mesh(pw3, secs, num_points, envmat, locs3);
+    int rows = theta1.size();
+    int cols = theta2.size();
+    int deep = theta3.size();
+    valarray<float> prod (rows * cols * deep);
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            for (int k = 0; k < deep; k++) {
+                prod[i*rows*cols + j*cols + k] = theta1[i] * theta2[j] * theta3[k];
+            }
+        }
+    }
+    
+    valarray<Kelvin> temps = theta_to_temp(prod, rb.t_init(), envmat.t_inf());  
+    /* 
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+           cout << prod[i*cols + j] << " "; 
+        }
+        cout << endl;
+    }
+    cout << endl;
+     
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            cout << temps[i*cols + j] << " ";        
+        }
+        cout << endl;
+    }
+    */
+    
+    vector<RectBarPoint> temp_dist; 
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            for (int k = 0; k < deep; k++) {
+                temp_dist.push_back(RectBarPoint(locs1[i], locs2[j], locs3[k] , secs));
+                temp_dist[i*rows*cols + j*cols + k].temp(temps[i*rows*cols + j*cols + k]); 
+            }
+        }
+    }
+    rb.temp_dist(temp_dist); 
+    // output_csv(rb.temp_dist(), secs);
+}
 
 
 float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat){

@@ -22,3 +22,9 @@ void InfCylinder::temp_dist(vector<InfCylinderPoint> &temp_dist) {
 vector<InfCylinderPoint> &InfCylinder::temp_dist() {
 	return _temp_dist;
 }
+
+bool InfCylinder::validpoint(InfCylinderPoint &p){
+	Loc l = p.cyl_loc();
+	if(l<0 || l>_radius) return false;
+	return true;
+}

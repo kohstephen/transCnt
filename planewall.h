@@ -5,6 +5,10 @@
 #include <string>
 #include "planewallpoint.h"
 
+/**
+ * PlaneWall is a subclass of Geometry
+ * It has only one dimension: _length
+ */
 class PlaneWall : public Geometry{
 	Dim _length;
 	vector<PlaneWallPoint> _temp_dist;
@@ -16,6 +20,7 @@ public:
 	Dim length();
 	void temp_dist(vector<PlaneWallPoint> &temp_dist); 
 	vector<PlaneWallPoint> &temp_dist(); 
+	bool validpoint(PlaneWallPoint &p);
 };
 
 #endif

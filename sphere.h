@@ -14,6 +14,8 @@ public:
 	Dim radius();
 	void temp_dist(vector<SpherePoint> &temp_dist); 
 	vector<SpherePoint> &temp_dist(); 
+	//! check if the SpherePoint p is a valid point inside this Sphere
+	bool validpoint(SpherePoint &p);
 };
 
 

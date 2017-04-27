@@ -22,3 +22,9 @@ void Sphere::temp_dist(vector<SpherePoint> &temp_dist) {
 vector<SpherePoint> &Sphere::temp_dist() {
 	return _temp_dist;
 }
+
+bool Sphere::validpoint(SpherePoint &p){
+	Loc l = p.sphere_loc();
+	if(l>_radius||l<0) return false;
+	return true;
+}

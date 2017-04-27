@@ -2,6 +2,10 @@
 #define PLANEWALLPOINT_H
 #include "point.h"
 
+/**
+ * PlaneWallPoint is a subclass of Point.
+ * It is used to represent a point inside planewall.
+ */
 class PlaneWallPoint : public Point{
 	Loc _rect_loc;
 

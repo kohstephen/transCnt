@@ -13,6 +13,7 @@ public:
 	Dim radius();
 	void temp_dist(vector<InfCylinderPoint> &temp_dist); 
 	vector<InfCylinderPoint> &temp_dist(); 
+	bool validpoint(InfCylinderPoint &p);
 };
 
 #endif

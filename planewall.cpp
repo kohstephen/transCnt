@@ -27,3 +27,9 @@ void PlaneWall::temp_dist(vector<PlaneWallPoint> &temp_dist) {
 vector<PlaneWallPoint> &PlaneWall::temp_dist() {
 	return _temp_dist;
 }
+
+bool PlaneWall::validpoint(PlaneWallPoint &p){
+	Loc l = p.rect_loc();
+	if(l<0 || l>_length) return false;
+	return true;
+}

@@ -34,6 +34,27 @@ int main(){
     Kelvin t_init = 500;
     EnvMat envmat = EnvMat("water", 300);
 
+    /*
+    InfRectBar irb = InfRectBar(1, 2, mat, t_init);
+    temp_on_mesh(irb, 5, 10, envmat); 
+
+    Cylinder cyl = Cylinder(1, 2, mat, t_init);
+    temp_on_mesh(cyl, 5, 10, envmat); 
+    */ 
+    
+    RectBar rb = RectBar(.09, .1, .11, mat, t_init);
+    vector<int> meshes {9, 20, 45, 99, 1000};
+    vector<string> ann {"1,000", "10,000", "100,000", "1,000,000", "1B"};
+
+    typedef std::chrono::high_resolution_clock Clock; 
+
+    for (int i = 0; i < meshes.size(); i++) { 
+        auto t1 = Clock::now();
+        temp_on_mesh(rb, 100, meshes[i], envmat); 
+        auto t2 = Clock::now();
+        cout << ann[i] + " points: " << chrono::duration_cast<chrono::milliseconds>(t2 - t1).count() << " ms!" << endl;  
+    }
+
     /**
      * Lumped Capacitance Unit Tests
      */

@@ -22,11 +22,9 @@ using namespace std;
 extern const float PI;
 
 /**
-void temp_at_time(vector<float>* ret, Sphere s, string mat, string envmat, 
-    vector<float>& points, float time, float t_init, float t_inf);
-**/
-
-
+ * Calculate temperature at a certain point.
+ * The temperature will be set in the point provided by the user.
+ */
 void temp_at_point(PlaneWall &w, PlaneWallPoint &p, EnvMat &envmat);
 
 void temp_at_point(Sphere &s, SpherePoint &p, EnvMat &envmat);
@@ -39,11 +37,19 @@ void temp_at_point(Cylinder &cyl, CylinderPoint &p, EnvMat &envmat);
 
 void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, EnvMat &envmat);
 
+
 void temp_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat); 
 
 void temp_on_mesh(InfCylinder &icyl, Secs secs, int mesh_density, EnvMat &envmat); 
 
 void temp_on_mesh(Sphere &s, Secs secs, int mesh_density, EnvMat &envmat); 
+
+void temp_on_mesh(InfRectBar &irb, Secs secs, int mesh_density, EnvMat &envmat);
+
+void temp_on_mesh(Cylinder &cyl, Secs secs, int mesh_density, EnvMat &envmat);
+
+void temp_on_mesh(RectBar &rb, Secs secs, int mesh_density, EnvMat &envmat);
+
 /**
  * Utility function to convert Kelvin to Fahrenheit.
  */
@@ -56,4 +62,5 @@ float kelvin_to_celcius(Kelvin k);
 
 // Plot
 void plot(Sphere &s, Secs start, Secs end, Secs intrv, EnvMat &envmat);
+
 #endif
