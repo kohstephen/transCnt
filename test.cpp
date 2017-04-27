@@ -170,6 +170,6 @@ int main(){
     p.push_back(sp5);
     p.push_back(sp6);
 
-    envmat = EnvMat("water", 373);
-    plot(s5, 0, 3000, 1, envmat);
+    envmat = EnvMat("water", 358);
+    plot(s5, 0, 3000, .1, envmat);
 }
