@@ -61,7 +61,6 @@ float kelvin_to_fahrenheit(Kelvin k);
 float kelvin_to_celcius(Kelvin k);
 
 // avg
-
 float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat);
 
 float avg_temp_at_time(PlaneWall &s, Secs time, EnvMat &envmat);

@@ -990,7 +990,7 @@ void temp_on_mesh(RectBar &rb, Secs secs, int mesh_density, EnvMat &envmat){
 }
 
 
-float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat){
+float avg_theta_at_time(Sphere &s, Secs time, EnvMat &envmat){
     float r0 = s.radius();
     float k = s.k();
     float h = envmat.h();
@@ -1039,7 +1039,7 @@ float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat){
 }
 
 
-float avg_temp_at_time(PlaneWall &w, Secs time, EnvMat &envmat){
+float avg_theta_at_time(PlaneWall &w, Secs time, EnvMat &envmat){
     float L = w.length();
     float k = w.k();
     float h = envmat.h();
@@ -1087,7 +1087,7 @@ float avg_temp_at_time(PlaneWall &w, Secs time, EnvMat &envmat){
     return (w.t_init() - envmat.t_inf()) / (w.t_init() - envmat.t_inf()) ;
 }
 
-float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
+float avg_theta_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
     float r0 = icyl.radius();
     float h = envmat.h();
     float k = icyl.k();
@@ -1144,7 +1144,7 @@ float avg_temp_at_time(InfCylinder &icyl, Secs time, EnvMat &envmat){
     return (icyl.t_init() - envmat.t_inf()) / (icyl.t_init() - envmat.t_inf()) ;
 }
 
-float avg_temp_at_time(RectBar &rb, Secs time, EnvMat &envmat){
+float avg_theta_at_time(RectBar &rb, Secs time, EnvMat &envmat){
     float k = rb.k();
     float c = rb.c();
     float density = rb.p();
@@ -1155,14 +1155,14 @@ float avg_temp_at_time(RectBar &rb, Secs time, EnvMat &envmat){
     PlaneWall pl2 = PlaneWall(rb.l2(), k,c,density, t_init);
     PlaneWall pl3 = PlaneWall(rb.l3(), k,c,density, t_init);
 
-    float theta1 = avg_temp_at_time(pl1, time, envmat);
-    float theta2 = avg_temp_at_time(pl2, time, envmat);
-    float theta3 = avg_temp_at_time(pl3, time, envmat);
+    float theta1 = avg_theta_at_time(pl1, time, envmat);
+    float theta2 = avg_theta_at_time(pl2, time, envmat);
+    float theta3 = avg_theta_at_time(pl3, time, envmat);
 
     return theta1*theta2*theta3;
 }
 
-float avg_temp_at_time(Cylinder &cyl, Secs time, EnvMat &envmat){
+float avg_theta_at_time(Cylinder &cyl, Secs time, EnvMat &envmat){
     float k = cyl.k();
     float c = cyl.c();
     float density = cyl.p();
@@ -1172,13 +1172,13 @@ float avg_temp_at_time(Cylinder &cyl, Secs time, EnvMat &envmat){
     InfCylinder icyl = InfCylinder(cyl.radius(),k,c,density,t_init);
     PlaneWall w = PlaneWall(cyl.length(),k,c,density,t_init);
 
-    float theta1 = avg_temp_at_time(icyl, time, envmat);
-    float theta2 = avg_temp_at_time(w, time, envmat);
+    float theta1 = avg_theta_at_time(icyl, time, envmat);
+    float theta2 = avg_theta_at_time(w, time, envmat);
 
     return theta1*theta2;
 }
 
-float avg_temp_at_time(InfRectBar &irb, Secs time, EnvMat &envmat){
+float avg_theta_at_time(InfRectBar &irb, Secs time, EnvMat &envmat){
     float k = irb.k();
     float c = irb.c();
     float density = irb.p();
@@ -1188,8 +1188,8 @@ float avg_temp_at_time(InfRectBar &irb, Secs time, EnvMat &envmat){
     PlaneWall pl1 = PlaneWall(irb.l1(), k,c,density, t_init);
     PlaneWall pl2 = PlaneWall(irb.l2(), k,c,density, t_init);
 
-    float theta1 = avg_temp_at_time(pl1, time, envmat);
-    float theta2 = avg_temp_at_time(pl2, time, envmat);
+    float theta1 = avg_theta_at_time(pl1, time, envmat);
+    float theta2 = avg_theta_at_time(pl2, time, envmat);
 
     return theta1*theta2;
 }
@@ -1276,7 +1276,7 @@ void plot(Sphere &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     cur = start;
     for (int i=0; i < n; ++i){
         auto min_max = min_max_points(s, cur, envmat);
-        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_theta_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
 
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
@@ -1291,7 +1291,7 @@ void plot(Sphere &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
 
     cur = end;
     auto min_max = min_max_points(s, cur, envmat);
-    avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
+    avg_temp.push_back(make_pair(theta_to_temp(avg_theta_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
     temp_at_point(s, min_max.first, envmat);
     min_temp.push_back(make_pair(cur, min_max.first.temp()));
     temp_at_point(s, min_max.second, envmat);
@@ -1324,7 +1324,7 @@ void plot(PlaneWall &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     cur = start;
     for (int i=0; i < n; ++i){
         auto min_max = min_max_points(s, cur, envmat);
-        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_theta_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
 
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
@@ -1339,7 +1339,7 @@ void plot(PlaneWall &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
 
     cur = end;
     auto min_max = min_max_points(s, cur, envmat);
-    avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
+    avg_temp.push_back(make_pair(theta_to_temp(avg_theta_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
     temp_at_point(s, min_max.first, envmat);
     min_temp.push_back(make_pair(cur, min_max.first.temp()));
     temp_at_point(s, min_max.second, envmat);
@@ -1372,7 +1372,7 @@ void plot(InfCylinder &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     cur = start;
     for (int i=0; i < n; ++i){
         auto min_max = min_max_points(s, cur, envmat);
-        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_theta_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
 
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
@@ -1387,7 +1387,7 @@ void plot(InfCylinder &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
 
     cur = end;
     auto min_max = min_max_points(s, cur, envmat);
-    avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
+    avg_temp.push_back(make_pair(theta_to_temp(avg_theta_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
     temp_at_point(s, min_max.first, envmat);
     min_temp.push_back(make_pair(cur, min_max.first.temp()));
     temp_at_point(s, min_max.second, envmat);
@@ -1420,7 +1420,7 @@ void plot(InfRectBar &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     cur = start;
     for (int i=0; i < n; ++i){
         auto min_max = min_max_points(s, cur, envmat);
-        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_theta_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
 
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
@@ -1435,7 +1435,7 @@ void plot(InfRectBar &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
 
     cur = end;
     auto min_max = min_max_points(s, cur, envmat);
-    avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
+    avg_temp.push_back(make_pair(theta_to_temp(avg_theta_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
     temp_at_point(s, min_max.first, envmat);
     min_temp.push_back(make_pair(cur, min_max.first.temp()));
     temp_at_point(s, min_max.second, envmat);
@@ -1468,7 +1468,7 @@ void plot(Cylinder &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     cur = start;
     for (int i=0; i < n; ++i){
         auto min_max = min_max_points(s, cur, envmat);
-        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_theta_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
 
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
@@ -1485,7 +1485,7 @@ void plot(Cylinder &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
 
     cur = end;
     auto min_max = min_max_points(s, cur, envmat);
-    avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
+    avg_temp.push_back(make_pair(theta_to_temp(avg_theta_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
     temp_at_point(s, min_max.first, envmat);
     min_temp.push_back(make_pair(cur, min_max.first.temp()));
     temp_at_point(s, min_max.second, envmat);
@@ -1518,7 +1518,7 @@ void plot(RectBar &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
     cur = start;
     for (int i=0; i < n; ++i){
         auto min_max = min_max_points(s, cur, envmat);
-        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
+        avg_temp.push_back(make_pair(cur, theta_to_temp(avg_theta_at_time(s, cur, envmat), s.t_init(), envmat.t_inf())));
 
         temp_at_point(s, min_max.first, envmat);
         min_temp.push_back(make_pair(cur, min_max.first.temp()));
@@ -1533,7 +1533,7 @@ void plot(RectBar &s, Secs start, Secs end, Secs intrv, EnvMat &envmat){
 
     cur = end;
     auto min_max = min_max_points(s, cur, envmat);
-    avg_temp.push_back(make_pair(theta_to_temp(avg_temp_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
+    avg_temp.push_back(make_pair(theta_to_temp(avg_theta_at_time(s, cur, envmat), s.t_init(), envmat.t_inf()), cur));
     temp_at_point(s, min_max.first, envmat);
     min_temp.push_back(make_pair(cur, min_max.first.temp()));
     temp_at_point(s, min_max.second, envmat);
@@ -1880,5 +1880,35 @@ void plot(InfRectBar &s, vector<InfRectBarPoint> &p, Secs start, Secs end, Secs 
     for(int i=0; i<all_temp.size(); ++i) {
         gp.send1d(all_temp[i]);
     }
+}
+
+float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat) {
+    return theta_to_temp(avg_temp_at_time(s, time, envmat), s.t_init(),
+        envmat.t_inf());
+}
+
+float avg_temp_at_time(PlaneWall &s, Secs time, EnvMat &envmat) {
+    return theta_to_temp(avg_temp_at_time(s, time, envmat), s.t_init(),
+        envmat.t_inf());
+}
+
+float avg_temp_at_time(InfCylinder &s, Secs time, EnvMat &envmat) {
+    return theta_to_temp(avg_temp_at_time(s, time, envmat), s.t_init(),
+        envmat.t_inf());
+}
+
+float avg_temp_at_time(Cylinder &s, Secs time, EnvMat &envmat) {
+    return theta_to_temp(avg_temp_at_time(s, time, envmat), s.t_init(),
+        envmat.t_inf());
+}
+
+float avg_temp_at_time(RectBar &s, Secs time, EnvMat &envmat) {
+    return theta_to_temp(avg_temp_at_time(s, time, envmat), s.t_init(),
+        envmat.t_inf());
+}
+
+float avg_temp_at_time(InfRectBar &s, Secs time, EnvMat &envmat) {
+    return theta_to_temp(avg_temp_at_time(s, time, envmat), s.t_init(),
+        envmat.t_inf());
 }
 
