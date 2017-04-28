@@ -27,6 +27,14 @@ float kelvin_to_celcius(Kelvin k){
     return k - 273.15;
 }
 
+Kelvin  fahrenheit_to_kelvin(float f){
+    return (f+459.67)*5.0/9.0;
+}
+
+Kelvin celcius_to_kelvin(float c){
+    return c + 273.15;
+}
+
 /**
  * Calculate biot number
  * x is radius r0 for sphere and infinite cylinder
