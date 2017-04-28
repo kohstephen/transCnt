@@ -1,4 +1,4 @@
-CXX = g++-6
+CXX = g++
 CPPFLAGS = --std=c++17 -g -o2
 
 all:
