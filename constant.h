@@ -16,7 +16,7 @@ using Dim = float;
  * Map from material to a vector of <temparature,k> pair
  * k is the conduction coefficient (units: W/mK)
  */
-static map<string, vector<pair<float,float> > > mat_to_k {
+static map<string, vector<pair<Kelvin,float> > > mat_to_k {
     {"al", { {100, 302}, {200, 237}, {300, 237}, {400, 240}, {600, 231}, {800, 218} } },
     {"egg", { {100, .56}, {500, .56}} },
     {"st", { {300, 60.5}, {400, 56.7}, {600, 48}, {800, 39.2}, {1000, 30} } } };
@@ -26,7 +26,7 @@ static map<string, vector<pair<float,float> > > mat_to_k {
  * c is 'the ratio of the heat added to (or removed from) an object
  * to the resulting temperature change” (Wikipedia)  (units: J/K)
  */
-static map<string, vector<pair<float,float> > > mat_to_c {
+static map<string, vector<pair<Kelvin,float> > > mat_to_c {
     {"al", { {100, 482}, {200, 798}, {300, 903}, {400, 949}, {600, 1033}, {800, 1146} } },
     {"egg", { {100, 3400}, {500, 3400}} },
     {"st", { {300, 434}, {400, 487}, {600, 559}, {800, 685}, {1000, 1169} } } };
