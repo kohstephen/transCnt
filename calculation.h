@@ -51,14 +51,16 @@ void temp_on_mesh(Cylinder &cyl, Secs secs, int mesh_density, EnvMat &envmat);
 void temp_on_mesh(RectBar &rb, Secs secs, int mesh_density, EnvMat &envmat);
 
 /**
- * Utility function to convert Kelvin to Fahrenheit.
+ * Utility functions to convert Kelvin to Fahrenheit and Celcius,
+ * and from Fahrenheit and Celcius to Kelvin.
  */
 float kelvin_to_fahrenheit(Kelvin k);
 
-/**
- * Utility function to convert Kelvin to Celcius.
- */
 float kelvin_to_celcius(Kelvin k);
+
+Kelvin  fahrenheit_to_kelvin(float f);
+
+Kelvin celcius_to_kelvin(float c);
 
 // avg
 float avg_temp_at_time(Sphere &s, Secs time, EnvMat &envmat);
