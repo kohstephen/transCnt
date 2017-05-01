@@ -479,15 +479,24 @@ void temp_at_point(InfRectBar &irb, InfRectBarPoint &p, EnvMat &envmat){
     p.temp(theta_to_temp(theta1*theta2, t_init, envmat.t_inf()));
 }
 
+/**
+ * Calculate temperature from valarray of theta and the init and infinite temparature
+ */
 valarray<Kelvin> theta_to_temp(valarray<float> theta, float t_init, float t_inf){
     return theta*(t_init-t_inf)+t_inf;
 }
 
+/**
+ * Vectorized Lumped Capacitance Approximation for planewall.
+ */
 valarray<float> lumped_cap_on_mesh(PlaneWall &w, EnvMat &envmat, valarray<Loc> locs, Secs secs) {
     valarray<float> theta (exp(-1 * envmat.h()*secs/(w.p()*w.length()*w.c())), locs.size());
     return theta;
 }
 
+/**
+ * Vectorized One Term Approximation for planewall.
+ */
 valarray<float> planewall_one_term_at_time_on_mesh(float fo, float bi, valarray<float> locs, Dim L) {
     float zeta = planewall_solve_for_zeta(bi, 1);
     float c1 = 4.0f*sin(zeta)/(2.0f*zeta+sin(2.0f*zeta));
@@ -495,6 +504,9 @@ valarray<float> planewall_one_term_at_time_on_mesh(float fo, float bi, valarray<
     return theta;
 }
 
+/**
+ * Vectorized Multiple Term Approximation for planewall.
+ */
 valarray<float> planewall_multiple_term_at_time_on_mesh(float fo, float bi, valarray<float> locs, Dim L) {
     valarray<float> theta (locs.size());
     int n = 1;
@@ -516,6 +528,11 @@ valarray<float> planewall_multiple_term_at_time_on_mesh(float fo, float bi, vala
     return theta;     
 }
 
+/**
+ * Vectorized Semi Infinite Approximation for planewall.
+ * x is the vector of distances from the surface of the object 
+ * to the point in consideration 
+ */
 valarray<float> semi_infinite_at_time_on_mesh(valarray<float> x, float alpha, float time, float h, float k){
     float y = sqrt(alpha*time);
     valarray<float> z (x/(2*y));
@@ -531,6 +548,10 @@ valarray<float> semi_infinite_at_time_on_mesh(valarray<float> x, float alpha, fl
     return ones - theta;
 }
 
+/**
+ * Calculate theta at a vector of points for planewall.
+ * To get temperature, use the theta_to_temp function.
+ */
 valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int num_points, EnvMat &envmat, valarray<Loc> & locs) {
     // temp_dist(w, num_points, secs);
     float L = w.length(); 
@@ -564,6 +585,9 @@ valarray<float> theta_on_mesh(PlaneWall &w, Secs secs, int num_points, EnvMat &e
     return semi_infinite_at_time_on_mesh(x, alpha, secs, h, k);
 }
 
+/**
+ * Output planewall temperature distribution to .csv.
+ */
 void output_csv(vector<PlaneWallPoint> &pts, Secs secs) {
     ofstream myfile;
     myfile.open ("pw.csv");
@@ -574,6 +598,10 @@ void output_csv(vector<PlaneWallPoint> &pts, Secs secs) {
     myfile.close();
 }
 
+/**
+ * Calculate the temperature at points sampled on PlaneWall w, at time t, with
+ * spacing of w.length()/mesh_density in environment envmat.
+ */
 void temp_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat){
     int num_points = mesh_density + 1; 
     valarray<Loc> locs (num_points);   
@@ -591,12 +619,17 @@ void temp_on_mesh(PlaneWall &w, Secs secs, int mesh_density, EnvMat &envmat){
     output_csv(w.temp_dist(), secs);
 }
 
-
+/**
+ * Vectorized Lumped Capacitance Approximation for infinite cylinder.
+ */
 valarray<float> lumped_cap_on_mesh(InfCylinder &icyl, EnvMat &envmat, valarray<Loc> locs, Secs secs) {
     valarray<float> theta (exp(-1 * 2 *envmat.h()*secs/(icyl.p()*icyl.radius()*icyl.c())), locs.size());
     return theta;
 }
 
+/**
+ * Vectorized One Term Approximation for infinite cylinder.
+ */
 valarray<float> infinitecylinder_one_term_at_time_on_mesh(float fourier, float biot, valarray<float> r, float r0){
     float zeta = cylinder_solve_for_zeta(biot,1);
     float j0 = std::tr1::cyl_bessel_j(0,zeta);
@@ -610,6 +643,9 @@ valarray<float> infinitecylinder_one_term_at_time_on_mesh(float fourier, float b
     return theta;
 }
 
+/**
+ * Vectorized Multiple Term Approximation for infinite cylinder.
+ */
 valarray<float> infinitecylinder_multiple_term_at_time_on_mesh(float fourier, float biot, valarray<float> r, float r0){
     valarray<float> theta (r.size());
     int n = 1;
@@ -639,6 +675,10 @@ valarray<float> infinitecylinder_multiple_term_at_time_on_mesh(float fourier, fl
     return theta;
 }
 
+/**
+ * Calculate theta at a vector of points for infinite cylinder.
+ * To get temperature, use the theta_to_temp function.
+ */
 valarray<float> theta_on_mesh(InfCylinder &icyl, Secs secs, int num_points, EnvMat &envmat, valarray<Loc> & locs) {
     // temp_dist(w, num_points, secs);
     Dim r0 = icyl.radius();
@@ -672,7 +712,9 @@ valarray<float> theta_on_mesh(InfCylinder &icyl, Secs secs, int num_points, EnvM
     return semi_infinite_at_time_on_mesh(x, alpha, secs, h, k);
 }
 
-
+/**
+ * Output infinite cylinder temperature distribution to .csv.
+ */
 void output_csv(vector<InfCylinderPoint> &pts, Secs secs) {
     ofstream myfile;
     myfile.open ("icyl.csv");
@@ -683,6 +725,10 @@ void output_csv(vector<InfCylinderPoint> &pts, Secs secs) {
     myfile.close();
 }
 
+/**
+ * Calculate the temperature at points sampled on Infinite Cylinder icyl, at time t, with
+ * spacing of icyl.radius()/mesh_density in environment envmat.
+ */
 void temp_on_mesh(InfCylinder &icyl, Secs secs, int mesh_density, EnvMat &envmat){
     int num_points = mesh_density + 1; 
     valarray<Loc> locs (num_points);   
@@ -701,12 +747,17 @@ void temp_on_mesh(InfCylinder &icyl, Secs secs, int mesh_density, EnvMat &envmat
     output_csv(icyl.temp_dist(), secs);
 }
 
-
+/**
+ * Vectorized Lumped Capacitance Approximation for sphere.
+ */
 valarray<float> lumped_cap_on_mesh(Sphere &s, EnvMat &envmat, valarray<Loc> locs, Secs secs) {
     valarray<float> theta (exp(-1 * 3 *envmat.h()*secs/(s.p()*s.radius()*s.c())), locs.size());
     return theta;
 }
 
+/**
+ * Vectorized One Term Approximation for sphere.
+ */
 valarray<float> sphere_one_term_at_time_on_mesh(float fourier, float biot, valarray<float> r, float r0){
     float zeta = sphere_solve_for_zeta(biot,1); 
     float c1 = 4.0f*(sin(zeta)-zeta*cos(zeta))/(2.0f*zeta-sin(2.0f*zeta));
@@ -717,6 +768,9 @@ valarray<float> sphere_one_term_at_time_on_mesh(float fourier, float biot, valar
     return theta;
 }
 
+/**
+ * Vectorized Multiple Term Approximation for sphere.
+ */
 valarray<float> sphere_multiple_term_at_time_on_mesh(float fourier, float biot, valarray<float> r, float r0){
     valarray<float> theta (r.size());
     int n = 1;
@@ -747,6 +801,10 @@ valarray<float> sphere_multiple_term_at_time_on_mesh(float fourier, float biot, 
     return theta;
 }
 
+/**
+ * Calculate theta at a vector of points for sphere.
+ * To get temperature, use the theta_to_temp function.
+ */
 valarray<float> theta_on_mesh(Sphere &s, Secs secs, int num_points, EnvMat &envmat, valarray<Loc> & locs) {
     // temp_dist(w, num_points, secs);
     Dim r0 = s.radius();
@@ -780,7 +838,9 @@ valarray<float> theta_on_mesh(Sphere &s, Secs secs, int num_points, EnvMat &envm
     return semi_infinite_at_time_on_mesh(x, alpha, secs, h, k);
 }
 
-
+/**
+ * Output sphere temperature distribution to .csv.
+ */
 void output_csv(vector<SpherePoint> &pts, Secs secs) {
     ofstream myfile;
     myfile.open ("sphere.csv");
@@ -791,6 +851,10 @@ void output_csv(vector<SpherePoint> &pts, Secs secs) {
     myfile.close();
 }
 
+/**
+ * Calculate the temperature at points sampled on Sphere s, at time t, with
+ * spacing of s.radius()/mesh_density in environment envmat.
+ */
 void temp_on_mesh(Sphere &s, Secs secs, int mesh_density, EnvMat &envmat){
     int num_points = mesh_density + 1; 
     valarray<Loc> locs (num_points);   
@@ -809,6 +873,9 @@ void temp_on_mesh(Sphere &s, Secs secs, int mesh_density, EnvMat &envmat){
     output_csv(s.temp_dist(), secs);
 }
 
+/**
+ * Output infinite rectangular bar temperature distribution to .csv.
+ */
 void output_csv(vector<InfRectBarPoint> &pts, Secs secs) {
     ofstream myfile;
     myfile.open ("irb.csv");
@@ -819,6 +886,10 @@ void output_csv(vector<InfRectBarPoint> &pts, Secs secs) {
     myfile.close();
 }
 
+/**
+ * Calculate the temperature at points sampled on Infinite Rectangular Bar irb, at time t, with
+ * spacing of irb.{l1, l2}()/mesh_density in environment envmat.
+ */
 void temp_on_mesh(InfRectBar &irb, Secs secs, int mesh_density, EnvMat &envmat){
     int num_points = mesh_density + 1; 
     valarray<Loc> locs1 (num_points);   
@@ -869,6 +940,9 @@ void temp_on_mesh(InfRectBar &irb, Secs secs, int mesh_density, EnvMat &envmat){
     output_csv(irb.temp_dist(), secs);
 }
 
+/**
+ * Output cylinder temperature distribution to .csv.
+ */
 void output_csv(vector<CylinderPoint> &pts, Secs secs) {
     ofstream myfile;
     myfile.open ("cyl.csv");
@@ -879,15 +953,26 @@ void output_csv(vector<CylinderPoint> &pts, Secs secs) {
     myfile.close();
 }
 
+/**
+ * Calculate the temperature at points sampled on Cylinder cyl, at time t, with
+ * spacing of cyl.{radius, length}()/mesh_density in environment envmat.
+ */
 void temp_on_mesh(Cylinder &cyl, Secs secs, int mesh_density, EnvMat &envmat){
     int num_points = mesh_density + 1; 
     valarray<Loc> locs1 (num_points);   
     valarray<Loc> locs2 (num_points);   
     float k = cyl.k();
+    // cout << "k: " << k << endl;
     float c = cyl.c();
+    // cout << "c: " << c << endl;
     float density = cyl.p();
+    // cout << "p: " << density << endl;
     Kelvin t_init = cyl.t_init();
+    // cout << "t_init: " << t_init << endl;
+    Kelvin t_inf = envmat.t_inf();
+    // cout << "t_inf: " << t_inf << endl;
     float h = envmat.h();
+    // cout << "h: " << h << endl;
 
     InfCylinder icyl = InfCylinder(cyl.radius(), k,c,density, t_init);
     PlaneWall pw = PlaneWall(cyl.length(), k,c,density, t_init);
@@ -929,6 +1014,9 @@ void temp_on_mesh(Cylinder &cyl, Secs secs, int mesh_density, EnvMat &envmat){
     output_csv(cyl.temp_dist(), secs);
 }
 
+/**
+ * Output rectangular bar temperature distribution to .csv.
+ */
 void output_csv(vector<RectBarPoint> &pts, Secs secs) {
     ofstream myfile;
     myfile.open ("rb.csv");
@@ -939,6 +1027,10 @@ void output_csv(vector<RectBarPoint> &pts, Secs secs) {
     myfile.close();
 }
 
+/**
+ * Calculate the temperature at points sampled on Rectangular Bar rb, at time t, with
+ * spacing of rb.{l1, l2, l3}()/mesh_density in environment envmat.
+ */
 void temp_on_mesh(RectBar &rb, Secs secs, int mesh_density, EnvMat &envmat){
     int num_points = mesh_density + 1; 
     valarray<Loc> locs1 (num_points);   
@@ -948,6 +1040,7 @@ void temp_on_mesh(RectBar &rb, Secs secs, int mesh_density, EnvMat &envmat){
     float c = rb.c();
     float density = rb.p();
     Kelvin t_init = rb.t_init();
+    Kelvin t_inf = envmat.t_inf();
     float h = envmat.h();
 
     PlaneWall pw1 = PlaneWall(rb.l1(), k,c,density, t_init);
@@ -966,12 +1059,13 @@ void temp_on_mesh(RectBar &rb, Secs secs, int mesh_density, EnvMat &envmat){
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             for (int k = 0; k < deep; k++) {
+                // cout << i*rows*cols + j*cols + k << " ";
                 prod[i*rows*cols + j*cols + k] = theta1[i] * theta2[j] * theta3[k];
             }
         }
     }
     
-    valarray<Kelvin> temps = theta_to_temp(prod, rb.t_init(), envmat.t_inf());  
+    valarray<Kelvin> temps = theta_to_temp(prod, t_init, t_inf);  
     /* 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
@@ -994,7 +1088,7 @@ void temp_on_mesh(RectBar &rb, Secs secs, int mesh_density, EnvMat &envmat){
         }
     }
     rb.temp_dist(temp_dist); 
-    // output_csv(rb.temp_dist(), secs);
+    output_csv(rb.temp_dist(), secs);
 }
 
 

@@ -30,19 +30,22 @@
 
 int main(){
     float ROUNDING = 0.1;
-    string mat = "st";
-    Kelvin t_init = 500;
-    EnvMat envmat = EnvMat("water", 300);
-
-    /*
-    InfRectBar irb = InfRectBar(1, 2, mat, t_init);
-    temp_on_mesh(irb, 5, 10, envmat); 
-
-    Cylinder cyl = Cylinder(1, 2, mat, t_init);
-    temp_on_mesh(cyl, 5, 10, envmat); 
-    */ 
+    //string mat = "st";
+    //Kelvin t_init = 500;
+    //EnvMat envmat = EnvMat("water", 300);
+    //RectBar rb = RectBar(.09, .1, .11, mat, t_init);
+    //temp_on_mesh(rb, 1, 1, envmat); 
+   
+    // CYLINDER TEXTBOOK PROBLEM
+    // string mat = "304";
+    // Kelvin t_init = 600;
+    // EnvMat envmat = EnvMat("oil", 300);
+    // Cylinder cyl = Cylinder(.04, .03, mat, t_init);
+    // temp_on_mesh(cyl, 180, 1, envmat); 
     
-    RectBar rb = RectBar(.09, .1, .11, mat, t_init);
+
+    // TIME 1,000 to 10M points generation 
+    /* 
     vector<int> meshes {9, 20, 45, 99, 214};
     vector<string> ann {"1,000", "10,000", "100,000", "1,000,000", "10M"};
 
@@ -54,6 +57,17 @@ int main(){
         auto t2 = Clock::now();
         cout << ann[i] + " points: " << chrono::duration_cast<chrono::milliseconds>(t2 - t1).count() << " ms!" << endl;  
     }
+    */
+   
+    
+    // PARAMETERS FOR BELOW UNIT TESTS
+    
+    string mat = "st";
+    Kelvin t_init = 500;
+    EnvMat envmat = EnvMat("water", 300);
+    RectBar rb = RectBar(.09, .1, .11, mat, t_init);
+    temp_on_mesh(rb, 1, 1, envmat); 
+    
 
     /**
      * Lumped Capacitance Unit Tests
